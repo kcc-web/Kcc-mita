@@ -50,3 +50,6 @@ export const WAFFLE = {
   photo: "/beans/waffle.jpg",
 };
 
+// lib/menu.ts（末尾に追加）
+export default BEANS;
+

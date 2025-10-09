@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
-import { BEANS } from "@/lib/menu";
+import { BEANS, WAFFLE } from "@/lib/menu";
 import type { Bean } from "@/types/bean";
 import MenuCard from "@/components/menu/MenuCard";
 import BeanDialog from "@/components/menu/BeanDialog";
@@ -62,6 +62,43 @@ export default function MenuClient() {
             />
           );
         })}
+      </section>
+
+      {/* ここから追加：ワッフル */}
+      <section className="mt-10">
+        <div className="flex items-center gap-2 mb-3">
+          {/* lucide-react の Utensils を既に import 済なら使ってOK（未 import なら削除して大丈夫） */}
+          {/* <Utensils className="h-4 w-4" /> */}
+          <h2 className="text-lg font-semibold">Waffle</h2>
+          <span className="text-sm text-muted-foreground">コーヒーと相性の良い焼き菓子</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="hover:shadow-md transition-shadow rounded-lg overflow-hidden border">
+            <div className="relative w-full h-40 bg-muted">
+              {/* next/image を使っている前提 */}
+              <img
+                src={WAFFLE.photo}
+                alt={WAFFLE.name}
+                className="object-cover w-full h-full"
+              />
+              {/* next/image を使いたい場合は上を以下に置き換え */}
+              {/* <Image src={WAFFLE.photo} alt={WAFFLE.name} fill className="object-cover" /> */}
+            </div>
+            <div className="p-3 space-y-2">
+              <div className="text-base font-medium">{WAFFLE.name}</div>
+              {Array.isArray(WAFFLE.flavor) && WAFFLE.flavor.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {WAFFLE.flavor.map((f: string) => (
+                    <span key={f} className="text-xs rounded-full border px-2 py-0.5">
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
 
       <BeanDialog open={open} onOpenChange={setOpen} bean={active} />
