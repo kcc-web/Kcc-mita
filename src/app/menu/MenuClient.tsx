@@ -1,11 +1,11 @@
-// src/app/menu/MenuClient.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-
+import { Card, CardContent } from "@/components/ui/card";
 import { BEANS, WAFFLE } from "@/lib/menu";
 import type { Bean } from "@/types/bean";
 import MenuCard from "@/components/menu/MenuCard";
@@ -35,9 +35,11 @@ export default function MenuClient() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="text-3xl font-bold">KCC Mita Menu</h1>
-      <p className="opacity-70 mt-1">三田祭 提供コーヒーとワッフルのオンラインメニュー</p>
+      <p className="opacity-70 mt-1">
+        三田祭 提供コーヒーとワッフルのオンラインメニュー
+      </p>
 
-      {/* PC向け：タイトル下CTA */}
+      {/* 上部ボタン */}
       <div className="mt-2 hidden sm:flex items-center justify-between gap-3">
         <span className="opacity-70 text-sm">診断から選ぶこともできます</span>
         <Button asChild variant="outline" size="sm">
@@ -45,65 +47,66 @@ export default function MenuClient() {
         </Button>
       </div>
 
-      {/* 一覧カード */}
-      <section className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {BEANS.map((b) => {
-          const keyStr = b.key ?? b.id.toString();
-          const isHL = highlight === keyStr;
-          return (
-            <MenuCard
-              key={b.id}
-              bean={b}
-              onOpen={() => {
-                setActive(b);
-                setOpen(true);
-              }}
-              className={isHL ? "ring-2 ring-foreground shadow-lg animate-[pulse_1.6s_ease-in-out_2]" : ""}
-            />
-          );
-        })}
-      </section>
+     {/* ☕ コーヒー豆カード一覧 */}
+<section
+  className="mt-6 grid grid-cols-2 gap-4"
+>
+  {BEANS.map((b) => {
+    const keyStr = b.key ?? b.id.toString();
+    const isHL = highlight === keyStr;
+    return (
+      <MenuCard
+        key={b.id}
+        bean={b}
+        onOpen={() => {
+          setActive(b);
+          setOpen(true);
+        }}
+        className={
+          isHL
+            ? "ring-2 ring-foreground shadow-lg animate-[pulse_1.6s_ease-in-out_2]"
+            : ""
+        }
+      />
+    );
+  })}
+</section>
 
-      {/* ここから追加：ワッフル */}
+
+      {/* 🧇 ワッフル表示 */}
       <section className="mt-10">
-        <div className="flex items-center gap-2 mb-3">
-          {/* lucide-react の Utensils を既に import 済なら使ってOK（未 import なら削除して大丈夫） */}
-          {/* <Utensils className="h-4 w-4" /> */}
-          <h2 className="text-lg font-semibold">Waffle</h2>
-          <span className="text-sm text-muted-foreground">コーヒーと相性の良い焼き菓子</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div className="hover:shadow-md transition-shadow rounded-lg overflow-hidden border">
-            <div className="relative w-full h-40 bg-muted">
-              {/* next/image を使っている前提 */}
-              <img
+        <h2 className="text-2xl font-semibold mb-3">Waffle</h2>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            <div className="relative w-full h-48 sm:h-56">
+              <Image
                 src={WAFFLE.photo}
                 alt={WAFFLE.name}
-                className="object-cover w-full h-full"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
-              {/* next/image を使いたい場合は上を以下に置き換え */}
-              {/* <Image src={WAFFLE.photo} alt={WAFFLE.name} fill className="object-cover" /> */}
             </div>
-            <div className="p-3 space-y-2">
-              <div className="text-base font-medium">{WAFFLE.name}</div>
-              {Array.isArray(WAFFLE.flavor) && WAFFLE.flavor.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {WAFFLE.flavor.map((f: string) => (
-                    <span key={f} className="text-xs rounded-full border px-2 py-0.5">
-                      {f}
-                    </span>
-                  ))}
-                </div>
-              )}
+            <div className="p-4 space-y-2">
+              <div className="text-lg font-medium">{WAFFLE.name}</div>
+              <div className="flex flex-wrap gap-2">
+                {WAFFLE.flavor.map((f) => (
+                  <span
+                    key={f}
+                    className="px-3 py-1 bg-muted rounded-full text-sm text-muted-foreground"
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
 
       <BeanDialog open={open} onOpenChange={setOpen} bean={active} />
 
-      {/* SP向け：右下浮遊CTA */}
+      {/* スマホ用診断ボタン */}
       <Link
         href="/quiz"
         className="sm:hidden fixed bottom-5 right-5 rounded-full shadow-lg px-5 py-3
@@ -114,3 +117,4 @@ export default function MenuClient() {
     </main>
   );
 }
+
