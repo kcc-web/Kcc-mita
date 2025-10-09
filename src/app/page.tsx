@@ -1,4 +1,3 @@
-// src/app/page.tsx
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Coffee, Utensils } from "lucide-react";
@@ -33,3 +32,4 @@ export default function Home() {
     </main>
   );
 }
+
