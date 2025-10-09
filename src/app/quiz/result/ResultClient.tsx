@@ -1,4 +1,3 @@
-// src/app/quiz/result/ResultClient.tsx
 "use client";
 
 import Link from "next/link";
@@ -32,7 +31,7 @@ type Initial = {
   score: string | null;
 };
 
-// ---------- 診断コメント（グループ別） ----------
+// ----- タイプ別コメント -----
 const NOTE_BY_GROUP: Record<string, string> = {
   EN: "華やかで好奇心旺盛なあなたには、香りが立つフルーティーな一杯を。今日の出来事も、きっと少しドラマチックに。",
   IN: "静かに味わう時間が似合うあなたへ。やさしい甘みとバランスのよい一杯で、心地よい余白をどうぞ。",
@@ -40,15 +39,14 @@ const NOTE_BY_GROUP: Record<string, string> = {
   IS: "落ち着きと洞察を大切にするあなたに。酸の輪郭が美しい一杯で、透明感ある集中を。",
 };
 
-// グループ推定（先頭2文字：EN/IN/ES/IS）
-const getGroup = (type?: string|null) => 
-    type?.slice(0, 2).toUpperCase() ?? "EN";
+const getGroup = (type?: string | null): string =>
+  type?.slice(0, 2).toUpperCase() ?? "EN";
+
 const getNoteByType = (type?: string | null): string => {
   return NOTE_BY_GROUP[getGroup(type)] ?? "あなたに合うコーヒーを見つけましょう。";
 };
 
-
-// ---------- タイプ→豆ID（4分類ロジック） ----------
+// ----- タイプ→豆ID（4分類） -----
 const getBeanIdByType = (type?: string | null): string | undefined => {
   const t = (type ?? "").toUpperCase();
   if (t.startsWith("EN")) return "ethiopia-washed";
@@ -58,8 +56,7 @@ const getBeanIdByType = (type?: string | null): string | undefined => {
   return undefined;
 };
 
-
-const norm = (s?: string | number | null) =>
+const norm = (s?: string | number | null | undefined) =>
   (s ?? "").toString().trim().toLowerCase();
 
 export default function ResultClient({ initial }: { initial: Initial }) {
@@ -96,7 +93,7 @@ export default function ResultClient({ initial }: { initial: Initial }) {
     return list[0];
   }, [list, initial.bean, initial.type]);
 
-  // グループで見た目アクセント（淡いグラデ色）
+  // 見た目アクセント（淡いグラデ色）
   const group = getGroup(initial.type);
   const gradientByGroup: Record<string, string> = {
     EN: "from-pink-100/70 to-orange-100/70 dark:from-pink-950/30 dark:to-orange-950/30",
@@ -107,19 +104,18 @@ export default function ResultClient({ initial }: { initial: Initial }) {
   const gradient = gradientByGroup[group] ?? gradientByGroup.EN;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10 space-y-6">
-      <header className="space-y-1">
+    <main className="mx-auto max-w-4xl px-4 py-10 space-y-8">
+      <header className="space-y-1 text-left">
         <h1 className="text-3xl font-bold flex items-center gap-2">
           診断結果 <span className="text-xl opacity-70">☕</span>
         </h1>
         <p className="opacity-70">あなたにおすすめのコーヒーはこちら！</p>
       </header>
 
-      <Card className="overflow-hidden border-0 shadow-md">
-        {/* 柔らかい背景グラデ */}
-        <div className={`bg-gradient-to-br ${gradient} p-0 sm:p-0`}>
-          <div className="p-6 sm:p-7">
-            <CardHeader className="px-0 pt-0 pb-4">
+      <Card className="overflow-hidden border-0 shadow-md sm:rounded-xl">
+        <div className={`bg-gradient-to-br ${gradient}`}>
+          <div className="p-6 sm:p-8">
+            <CardHeader className="px-0 pt-0 pb-5">
               <CardTitle className="flex items-center gap-2">
                 <span className="text-base sm:text-lg">タイプ</span>
                 {initial.type ? (
@@ -134,12 +130,12 @@ export default function ResultClient({ initial }: { initial: Initial }) {
               </CardTitle>
             </CardHeader>
 
-            <CardContent className="px-0 space-y-5">
+            <CardContent className="px-0 space-y-6">
               {recommended ? (
                 <>
-                  {/* 写真 */}
-                  {recommended.photo && (
-                    <div className="relative w-full h-48 sm:h-56 rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
+                  {/* 画像（失敗時プレースホルダー） */}
+                  {recommended.photo ? (
+                    <div className="relative w-full h-48 sm:h-60 rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10">
                       <Image
                         src={recommended.photo}
                         alt={recommended.name}
@@ -148,6 +144,10 @@ export default function ResultClient({ initial }: { initial: Initial }) {
                         sizes="(max-width: 768px) 100vw, 66vw"
                         priority
                       />
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 sm:h-60 rounded-xl bg-gradient-to-br from-zinc-100 to-zinc-200 dark:from-zinc-900 dark:to-zinc-800 grid place-items-center text-sm text-muted-foreground">
+                      画像準備中…
                     </div>
                   )}
 
@@ -190,12 +190,12 @@ export default function ResultClient({ initial }: { initial: Initial }) {
                 <p className="text-xs text-muted-foreground/80">スコア: {initial.score}</p>
               )}
 
-              {/* ボタン群 */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
-                <Button asChild className="h-10">
+              {/* ボタン群：SPはフル幅、PCは自動 */}
+              <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                <Button asChild className="h-10 w-full sm:w-auto">
                   <Link href="/menu">メニューへ</Link>
                 </Button>
-                <Button asChild variant="outline" className="h-10">
+                <Button asChild variant="outline" className="h-10 w-full sm:w-auto">
                   <Link href="/quiz">もう一度診断</Link>
                 </Button>
               </div>
@@ -206,6 +206,7 @@ export default function ResultClient({ initial }: { initial: Initial }) {
     </main>
   );
 }
+
 
 
 
