@@ -2,19 +2,27 @@
 import { Suspense } from "react";
 import ResultClient from "./ResultClient";
 
-export const dynamic = "force-dynamic"; // SSG回避
+export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default function ResultPage({
+type SP = Record<string, string | string[] | undefined>;
+
+export default async function ResultPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  // Next.js 15 では searchParams が Promise になり得る
+  searchParams?: Promise<SP>;
 }) {
-  // 期待するクエリ（必要に応じて調整）
+  const sp = (await searchParams) ?? {};
+
+  // ユーティリティ：string | string[] | undefined -> string | null
+  const pick = (v: string | string[] | undefined): string | null =>
+    typeof v === "string" ? v : Array.isArray(v) ? v[0] ?? null : null;
+
   const initial = {
-    type: (searchParams?.type as string) ?? null,   // 例: ENFP的な結果キー
-    bean: (searchParams?.bean as string) ?? null,   // おすすめ豆ID
-    score: (searchParams?.score as string) ?? null, // スコア等
+    type: pick(sp.type),
+    bean: pick(sp.bean),
+    score: pick(sp.score),
   };
 
   return (

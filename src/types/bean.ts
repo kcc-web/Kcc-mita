@@ -8,5 +8,7 @@ export type Bean = {
   photo: string;
   radar: { acidity: number; sweetness: number; body: number; aroma: number; aftertaste: number };
   key?: string;
+  process?: string;
+  tags?: string[];
 };
 
