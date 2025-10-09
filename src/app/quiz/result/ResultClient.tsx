@@ -51,7 +51,6 @@ export default function ResultClient({ initial }: { initial: Initial }) {
   const list: Bean[] = useMemo(() => {
     const cand =
       (MenuModule as any).BEANS ??
-      (MenuModule as any).MENU ??
       (MenuModule as any).default ??
       [];
     return Array.isArray(cand) ? (cand as Bean[]) : [];
