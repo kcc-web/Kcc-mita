@@ -1,7 +1,6 @@
 /* src/app/globals.css — Tailwind v4 ready (Next.js + shadcn/ui) */
-/* 1) v4の読み込み */
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
+@import "tailwindcss";
+
 
 /* 2) デザイントークン（HSLで統一） */
 :root {
