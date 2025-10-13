@@ -48,6 +48,7 @@ export const WAFFLE = {
   name: "ベルギーワッフル",
   flavor: ["バター","はちみつ","香ばしさ"],
   photo: "/beans/waffle.jpg",
+  description: "コーヒーにぴったりの焼きたてワッフル。",
 };
 
 // lib/menu.ts（末尾に追加）

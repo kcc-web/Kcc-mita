@@ -127,7 +127,70 @@ body {
   outline-offset: 2px;
 }
 
+summary { list-style: none; }
+summary::-webkit-details-marker { display: none; }
 
+/* --- C-7 global motion tuning --- */
 
+/* 通常のトランジションを少し速めに */
+* {
+  transition-property: color, background-color, border-color, transform, box-shadow, opacity;
+  transition-duration: 200ms;
+  transition-timing-function: ease-in-out;
+}
 
+/* モーション控えめ設定のユーザーを尊重 */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
 
+/* --- C-8: focus & scroll refinement --- */
+
+/* フォーカスリングをKCCのピンク系に統一 */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+  border-radius: 6px;
+  transition: outline-color 0.2s ease;
+}
+
+/* 通常クリックではフォーカスを強調しすぎない */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* デスクトップ用のscrollbarを細く＆柔らかく */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground)) transparent;
+}
+
+/* WebKit (Chrome / Safari) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.25);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* active link の下線インジケータ（任意） */
+.active-underline { position: relative; }
+.active-underline[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -6px;
+  height: 2px; border-radius: 9999px;
+  background: hsl(var(--primary));
+}

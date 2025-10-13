@@ -3,6 +3,9 @@ import "./globals.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
+import { Menu as MenuIcon } from "lucide-react";
+import ActiveLink from "@/components/ui/ActiveLink" ;
+
 
 export const metadata: Metadata = {
   title: "KCC Mita 2025",
@@ -25,22 +28,18 @@ export const metadata: Metadata = {
 function NavLinks() {
   const items = [
     { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
+    { href: "/about", label: "About us" },
     { href: "/menu", label: "Menu" },
-    { href: "/quiz", label: "Quiz" },
+    { href: "/quiz", label: "MBTI 診断" },
     { href: "/contact", label: "Contact" },
   ];
   return (
     <nav className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 text-sm">
       {items.map((it) => (
-        <Link
-          key={it.href}
-          href={it.href}
-          className="hover:opacity-80 transition-opacity"
-          /* ← onClick を渡さない */
-        >
-          {it.label}
-        </Link>
+       <ActiveLink key={it.href} href={it.href} className="active-underline">
+       {it.label}
+      </ActiveLink>
+
       ))}
     </nav>
   );
@@ -51,7 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="ja">
       <body className="bg-background text-foreground">
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+        <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
           <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between">
             <Link
               href="/"
@@ -66,27 +65,26 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <NavLinks />
             </div>
 
-            {/* Mobile hamburger (CSS-only) */}
+            {/* ✅ Mobile hamburger (Lucide icon version) */}
             <details className="md:hidden relative">
-  <summary
-    className="list-none inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border cursor-pointer"
-    aria-label="Open menu"
-  >
-    <span className="sr-only">Open menu</span>
-    <span className="block h-0.5 w-4 bg-foreground"></span>
-    <span className="block h-0.5 w-4 bg-foreground mt-1"></span>
-    <span className="block h-0.5 w-4 bg-foreground mt-1"></span>
-  </summary>
-  <div className="absolute right-0 mt-2 min-w-[220px] rounded-xl border border-border bg-background shadow">
-    <div className="px-4 py-3">
-      <NavLinks /> {/* ← そのまま表示でOK */}
-    </div>
-  </div>
-</details>
+              <summary
+                className="list-none inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border cursor-pointer text-foreground p-0"
+                aria-label="Open menu"
+              >
+                <span className="sr-only">Open menu</span>
+                <MenuIcon className="h-5 w-5" aria-hidden="true" />
+              </summary>
+
+              <div className="absolute right-0 mt-2 min-w-[220px] rounded-xl border border-border bg-background shadow">
+                <div className="px-4 py-3">
+                  <NavLinks />
+                </div>
+              </div>
+            </details>
           </div>
         </header>
 
-        {/* Page content */}
+        {/* Main */}
         <main>{children}</main>
 
         {/* Footer */}
@@ -122,6 +120,3 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     </html>
   );
 }
-
-
-
