@@ -1,16 +1,13 @@
 // src/app/quiz/page.tsx
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+"use client";
+
 import QuizClient from "./QuizClient";
 
-export default async function QuizPage() {
-  const cookieStore = await cookies();
-  const seen = cookieStore.get("kcc_quiz_intro")?.value === "1";
-
-  // クッキーが立ってない → Heroへ飛ばす
-  if (!seen) redirect("/quiz/intro?next=/quiz");
-
+// 毎回 /quiz/intro から入る運用なので Cookie 制御は不要。
+// Heroから「診断を始める ☕️」→ /quiz に遷移して診断が開始される。
+export default function QuizPage() {
   return <QuizClient />;
 }
+
 
 
