@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
@@ -56,11 +59,13 @@ function ResultInner() {
   );
 }
 
-export default function QuizResultPage() {
+export default function ResultPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center opacity-70">Loading result...</div>}>
       <ResultInner />
     </Suspense>
   );
 }
+
+
 
