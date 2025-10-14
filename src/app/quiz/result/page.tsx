@@ -1,34 +1,51 @@
-// src/app/quiz/result/page.tsx
-import { Suspense } from "react";
-import ResultClient from "./ResultClient";
+// src/app/result/page.tsx
+"use client";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-type SP = Record<string, string | string[] | undefined>;
+export default function ResultPage() {
+  const sp = useSearchParams();
+  const type = sp.get("type") ?? "ENFP";
+  const bean = sp.get("bean") ?? "Ethiopia Washed";
 
-export default async function ResultPage({
-  searchParams,
-}: {
-  // Next.js 15 では searchParams が Promise になり得る
-  searchParams?: Promise<SP>;
-}) {
-  const sp = (await searchParams) ?? {};
-
-  // ユーティリティ：string | string[] | undefined -> string | null
-  const pick = (v: string | string[] | undefined): string | null =>
-    typeof v === "string" ? v : Array.isArray(v) ? v[0] ?? null : null;
-
-  const initial = {
-    type: pick(sp.type),
-    bean: pick(sp.bean),
-    score: pick(sp.score),
+  // beanごとの説明（必要に応じて増やしてOK）
+  const beanDesc: Record<string, string> = {
+    ETH_LIGHT: "華やかでフルーティーな香りが特徴。明るく自由なあなたにぴったり。",
+    COL_MID: "バランスが良く穏やかな味わい。落ち着いた性格のあなたに。",
+    KEN_DARK: "しっかりした酸味とコク。リーダータイプのあなたにおすすめ。",
+    GUA_MID: "チョコのような甘みと深み。努力家で誠実なあなたに。",
   };
 
+  const desc = beanDesc[bean] ?? "あなたにぴったりのコーヒーです☕️";
+
   return (
-    <Suspense fallback={<div className="p-6 text-center opacity-70">診断結果を読み込み中…</div>}>
-      <ResultClient initial={initial} />
-    </Suspense>
+    <main className="mx-auto max-w-2xl px-4 py-16 text-center">
+      <h1 className="text-3xl font-bold mb-6">あなたの結果</h1>
+
+      <div className="mb-4 text-muted-foreground">
+        MBTIタイプ：<span className="font-semibold text-foreground">{type}</span>
+      </div>
+
+      <div className="p-6 border rounded-2xl bg-card shadow-sm">
+        <h2 className="text-2xl font-semibold mb-2">{bean}</h2>
+        <p className="text-muted-foreground">{desc}</p>
+      </div>
+
+      <div className="mt-10 flex justify-center gap-4">
+        <Link
+          href="/quiz/intro"
+          className="rounded-md border px-4 py-2 text-sm hover:bg-secondary transition-colors"
+        >
+          もう一度診断する
+        </Link>
+        <Link
+          href={`/menu?bean=${encodeURIComponent(bean)}`}
+          className="rounded-md bg-foreground text-background px-4 py-2 text-sm font-medium hover:opacity-90 transition-all"
+        >
+          メニューを見る
+        </Link>
+      </div>
+    </main>
   );
 }
-

@@ -30,7 +30,7 @@ function NavLinks() {
     { href: "/", label: "Home" },
     { href: "/about", label: "About us" },
     { href: "/menu", label: "Menu" },
-    { href: "/quiz", label: "MBTI 診断" },
+    { href: "/quiz/intro", label: "MBTI 診断" },
     { href: "/contact", label: "Contact" },
   ];
   return (

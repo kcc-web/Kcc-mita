@@ -15,7 +15,7 @@ export default function Home() {
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 max-w-xl">
-        <Link href="/quiz" className="w-full">
+        <Link href="/quiz/intro" className="w-full">
           <Button className="w-full h-12 text-base">
             <Coffee className="mr-2 h-5 w-5" aria-hidden="true" />
             MBTI診断へ

@@ -171,7 +171,7 @@ export default function ResultClient({ initial }: { initial: Initial }) {
                 <Link href="/menu">メニューへ</Link>
               </Button>
               <Button asChild variant="outline" className="h-10 w-full sm:w-auto">
-                <Link href="/quiz">もう一度診断</Link>
+                <Link href="/quiz/intro">もう一度診断</Link>
               </Button>
             </div>
           </CardContent>

@@ -43,7 +43,7 @@ export default function MenuClient() {
       <div className="mt-2 hidden sm:flex items-center justify-between gap-3">
         <span className="opacity-70 text-sm">診断から選ぶこともできます</span>
         <Button asChild variant="outline" size="sm">
-          <Link href="/quiz">診断してみる</Link>
+          <Link href="/quiz/intro">診断してみる</Link>
         </Button>
       </div>
 
@@ -104,7 +104,7 @@ export default function MenuClient() {
 
       {/* スマホ用診断ボタン */}
       <Link
-        href="/quiz"
+        href="/quiz/intro"
         className="sm:hidden fixed bottom-5 right-5 rounded-full shadow-lg px-5 py-3 bg-foreground text-background font-medium"
       >
         診断する

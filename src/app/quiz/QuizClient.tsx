@@ -6,8 +6,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import ProgressBar from "@/components/ui/ProgressBar";
 import { StepDots } from "@/components/ui/StepDots";
+import { computeMbtiType } from "@/lib/mbti";
+import { beanForType, type MbtiType, type BeanKey } from "@/lib/resultMap";
+import { useRouter } from "next/navigation";
+
 
 export default function QuizClient() {
+  const router = useRouter();
   const total = QUESTIONS.length;
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<number[]>(() =>
@@ -32,13 +37,13 @@ export default function QuizClient() {
       if (index < total - 1) {
         setIndex(index + 1);
       } else {
-        // ここで結果ページ遷移など
-        // const result = computeMbtiType(answers);
-        // router.push(`/result?type=${result}`);
-      }
-    },
-    [answers, index, total]
-  );
+       const resultType = computeMbtiType(QUESTIONS, next) as MbtiType;
+       const bean: BeanKey = beanForType(resultType);
+      router.push(`/result?type=${resultType}&bean=${encodeURIComponent(bean)}`);
+    }
+  },
+  [answers, index, total, router]
+);
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
