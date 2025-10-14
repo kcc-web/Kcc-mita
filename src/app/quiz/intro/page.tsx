@@ -1,16 +1,19 @@
+// src/app/quiz/intro/page.tsx
 "use client";
 
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-export default function QuizIntroPage() {
+function IntroInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get("next") || "/quiz";
 
   const start = () => {
-    document.cookie = "kcc_quiz_intro=1; path=/; max-age=86400; samesite=lax";
+    // Cookieは任意。毎回Heroを通したいなら省略してOK
+    // document.cookie = "kcc_quiz_intro=1; path=/; max-age=86400; samesite=lax";
     router.push(next);
   };
 
@@ -49,6 +52,15 @@ export default function QuizIntroPage() {
     </main>
   );
 }
+
+export default function QuizIntroPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center opacity-70">Loading…</div>}>
+      <IntroInner />
+    </Suspense>
+  );
+}
+
 
 
 
