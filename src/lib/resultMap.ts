@@ -1,38 +1,105 @@
-// /src/lib/resultMap.ts
-export type MbtiType =
-  | "INTJ" | "INTP" | "ENTJ" | "ENTP"
-  | "INFJ" | "INFP" | "ENFJ" | "ENFP"
-  | "ISTJ" | "ISFJ" | "ESTJ" | "ESFJ"
-  | "ISTP" | "ISFP" | "ESTP" | "ESFP";
+// 4軸キー
+export type Axes = "brightness" | "texture" | "sweetness" | "aroma";
 
-export type BeanKey = "ETH_LIGHT" | "COL_MEDIUM" | "KEN_DARK" | "GUAT_FLAVOR";
+// 0..100
+export type Scores = Record<Axes, number>;
 
-export const RESULT_MAP: Record<MbtiType, {
-  label: string; // タイプのニックネーム
-  desc: string;  // 一言説明（短文）
-  bean: BeanKey; // おすすめ豆キー（/menu 側と連携）
-}> = {
-  INTJ: { label: "戦略家タイプ", desc: "本質を射抜く分析で、最短距離を見つける。", bean: "KEN_DARK" },
-  INTP: { label: "研究者タイプ", desc: "知の探求者。答えよりも良い問いを好む。", bean: "ETH_LIGHT" },
-  ENTJ: { label: "統率者タイプ", desc: "決める覚悟と実行力。高い視座で前進。", bean: "KEN_DARK" },
-  ENTP: { label: "発明家タイプ", desc: "ひらめきと実験。新しい当たり前を作る。", bean: "ETH_LIGHT" },
+export type BeanTypeKey = "ethiopia_washed" | "ethiopia_natural" | "kenya" | "guatemala" | "honduras";
 
-  INFJ: { label: "提唱者タイプ", desc: "静かな情熱で、理想を現実に近づける。", bean: "GUAT_FLAVOR" },
-  INFP: { label: "仲介者タイプ", desc: "自分らしさを大切に、優しい選択をする。", bean: "GUAT_FLAVOR" },
-  ENFJ: { label: "主人公タイプ", desc: "人を巻き込み、場の温度を一段上げる。", bean: "COL_MEDIUM" },
-  ENFP: { label: "冒険者タイプ", desc: "ワクワクと好奇心で、世界をカラフルに。", bean: "COL_MEDIUM" },
-
-  ISTJ: { label: "管理者タイプ", desc: "丁寧で堅実。信頼を積み上げる職人肌。", bean: "COL_MEDIUM" },
-  ISFJ: { label: "擁護者タイプ", desc: "気配り上手。安心できる土台をつくる。", bean: "GUAT_FLAVOR" },
-  ESTJ: { label: "幹事長タイプ", desc: "段取りと推進で、物事を着地させる。", bean: "KEN_DARK" },
-  ESFJ: { label: "ホスピタリティ", desc: "場の空気を読み、みんなを笑顔に。", bean: "COL_MEDIUM" },
-
-  ISTP: { label: "妙技タイプ", desc: "手を動かして理解するフィクサー。", bean: "ETH_LIGHT" },
-  ISFP: { label: "アトリエタイプ", desc: "しなやかな感性で“らしさ”を描く。", bean: "GUAT_FLAVOR" },
-  ESTP: { label: "切り込み隊長", desc: "瞬発力と体験で、状況を切り拓く。", bean: "KEN_DARK" },
-  ESFP: { label: "エンタメタイプ", desc: "今この瞬間を、最高に楽しむ天才。", bean: "COL_MEDIUM" },
+export type BeanProfile = {
+  key: BeanTypeKey;
+  beanName: string;
+  typeName: string;        // The Minimalist など
+  tags: string[];
+  desc: string;
+  // ターゲット味覚プロファイル（中心値）
+  profile: Scores;
+  // 画像パス（任意: /lib/menu.ts 側の photo 優先）
+  fallbackImage: string;
 };
 
-export function beanForType(type: MbtiType): BeanKey {
-  return RESULT_MAP[type].bean;
+// 5タイプ定義
+export const BEAN_TYPES: BeanProfile[] = [
+  {
+    key: "ethiopia_washed",
+    beanName: "Ethiopia Washed",
+    typeName: "The Minimalist",
+    tags: ["Bright", "Sharp", "Clean", "Floral"],
+    desc: "澄んだ感性と知性。無駄なく洗練された一杯を好むタイプ。",
+    profile: { brightness: 80, texture: 70, sweetness: 40, aroma: 65 },
+    fallbackImage: "/beans/ethiopia.jpg",
+  },
+  {
+    key: "ethiopia_natural",
+    beanName: "Ethiopia Natural",
+    typeName: "The Dreamer",
+    tags: ["Bright", "Soft", "Sweet", "Fruity"],
+    desc: "自由で感性豊か。果実味と甘い余韻で想像力が広がる。",
+    profile: { brightness: 75, texture: 40, sweetness: 80, aroma: 80 },
+    fallbackImage: "/beans/ethiopia.jpg",
+  },
+  {
+    key: "kenya",
+    beanName: "Kenya",
+    typeName: "The Challenger",
+    tags: ["Deep", "Sharp", "Clean", "Fruity"],
+    desc: "情熱と推進力。厚みのある果実感とキレを求める挑戦者。",
+    profile: { brightness: 40, texture: 75, sweetness: 35, aroma: 70 },
+    fallbackImage: "/beans/kenya.jpg",
+  },
+  {
+    key: "guatemala",
+    beanName: "Guatemala",
+    typeName: "The Harmonist",
+    tags: ["Deep", "Soft", "Sweet", "Floral"],
+    desc: "調和と温かさ。やさしい甘さと落ち着きのある雰囲気。",
+    profile: { brightness: 45, texture: 35, sweetness: 70, aroma: 55 },
+    fallbackImage: "/beans/guatemala.jpg",
+  },
+  {
+    key: "honduras",
+    beanName: "Honduras",
+    typeName: "The Grounded",
+    tags: ["Deep", "Soft", "Sweet", "Clean"],
+    desc: "安定感と安心。毎日に寄り添う、まろやかな一杯。",
+    profile: { brightness: 35, texture: 45, sweetness: 75, aroma: 45 },
+    fallbackImage: "/beans/honduras.jpg",
+  },
+];
+
+// ユーザースコアとの距離（小さいほど近い）
+const distance = (a: Scores, b: Scores) =>
+  (a.brightness - b.brightness) ** 2 +
+  (a.texture - b.texture) ** 2 +
+  (a.sweetness - b.sweetness) ** 2 +
+  (a.aroma - b.aroma) ** 2;
+
+// 最も近いタイプを1つ返す
+export function pickBeanType(scores: Scores): BeanProfile {
+  return BEAN_TYPES.reduce((best, cur) =>
+    distance(scores, cur.profile) < distance(scores, best.profile) ? cur : best
+  , BEAN_TYPES[0]);
+}
+
+// --- ここから互換レイヤー（旧コード救済用） -------------------------
+
+// 旧コードが import している型名に対応
+export type MbtiType = "EN" | "IN" | "ES" | "IS";
+
+// 旧コードが参照していた BeanKey に合わせた “レガシー” 型
+// （※ 実体の5タイプとは別物。あくまで互換目的）
+export type BeanKey = "ethiopia-washed" | "colombia" | "kenya" | "guatemala";
+
+/**
+ * 旧API: MBTIグループ -> レガシー豆スラッグ
+ * 既存の QuizClient からの呼び出しを壊さないための簡易マッピング。
+ * （5タイプ設計とは独立。/result 側では score を用いた5タイプ判定を行います）
+ */
+export function beanForType(t: MbtiType): BeanKey {
+  const u = (t ?? "EN").toUpperCase();
+  if (u.startsWith("EN")) return "ethiopia-washed";
+  if (u.startsWith("ES")) return "kenya";
+  if (u.startsWith("IS")) return "guatemala";
+  // IN はレガシーでは Colombia を返す（データが無ければ /result 側でフォールバック画像が効きます）
+  return "colombia";
 }
