@@ -1,11 +1,28 @@
+// 旧 /quiz/result を /result へ安全にリダイレクト（Next.js 15対応）
+
 import { redirect } from "next/navigation";
+import { use } from "react";
+
 export const dynamic = "force-dynamic";
 
-export default function OldResult({ searchParams }: { searchParams: Record<string, any> }) {
-  const sp = new URLSearchParams();
-  for (const [k, v] of Object.entries(searchParams)) {
-    if (Array.isArray(v)) v.forEach((x) => sp.append(k, x));
-    else if (v != null) sp.set(k, v as string);
+type SP = Record<string, string | string[] | undefined> | null | undefined;
+
+export default function OldResult({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const sp = use(searchParams) ?? {};
+  const qs = new URLSearchParams();
+
+  for (const [k, v] of Object.entries(sp)) {
+    if (Array.isArray(v)) {
+      for (const x of v) if (x != null) qs.append(k, x);
+    } else if (v != null) {
+      qs.set(k, v);
+    }
   }
-  redirect(`/result?${sp.toString()}`);
+
+  redirect(`/result?${qs.toString()}`);
 }
+

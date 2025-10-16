@@ -90,8 +90,21 @@ export default function ResultClient({ initial }: { initial: Initial }) {
         </p>
       </header>
 
-      
-
+      {/* メディア＋バー（横並び） */}
+<section className="grid md:grid-cols-5 gap-6 items-start">
+  {/* 左：写真（やや小さめ） */}
+  <div className="md:col-span-2">
+    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl ring-1 ring-black/5 dark:ring-white/10 shadow-md">
+      <Image
+        src={photoSrc ?? "/beans/placeholder.jpg"}
+        alt={picked.beanName}
+        fill
+        className="object-cover"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 40vw, 480px"
+        priority
+      />
+    </div>
+  </div>
         {/* 右：バー4本 */}
         <div className="space-y-4">
           <FlavorBar title="Brightness" left="Bright" right="Deep" value={scores.brightness} gradient="brightness" />
@@ -99,7 +112,7 @@ export default function ResultClient({ initial }: { initial: Initial }) {
           <FlavorBar title="Sweetness" left="Sweet" right="Clean" value={scores.sweetness} gradient="sweetness" />
           <FlavorBar title="Aroma" left="Floral" right="Fruity" value={scores.aroma} gradient="aroma" />
         </div>
-
+        </section>
       {/* 結果カード */}
       <div className="mt-8">
         <BeanCard
