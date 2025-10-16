@@ -4,13 +4,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
 import { Menu as MenuIcon } from "lucide-react";
-import ActiveLink from "@/components/ui/ActiveLink" ;
-
+import NavLinks from "@/components/ui/NavLinks"; // ← Client側に分離したナビを使用（usePathnameはここだけ）
 
 export const metadata: Metadata = {
   title: "KCC Mita 2025",
   description: "Keio Coffee Club — Mita Festival 2025",
-  metadataBase: new URL("https://example.com"), // ←本番URLに差し替え
+  metadataBase: new URL("https://example.com"), // ← 本番URLに差し替え
   openGraph: {
     title: "KCC Mita 2025",
     description: "Keio Coffee Club — Mita Festival 2025",
@@ -25,32 +24,18 @@ export const metadata: Metadata = {
   },
 };
 
-function NavLinks() {
-  const items = [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About us" },
-    { href: "/menu", label: "Menu" },
-    { href: "/quiz/intro", label: "MBTI 診断" },
-    { href: "/contact", label: "Contact" },
-  ];
-  return (
-    <nav className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 text-sm">
-      {items.map((it) => (
-       <ActiveLink key={it.href} href={it.href} className="active-underline">
-       {it.label}
-      </ActiveLink>
-
-      ))}
-    </nav>
-  );
-}
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ja">
       <body className="bg-background text-foreground">
+        {/* ✨ やわらか背景（全ページ共通） */}
+        <div className="pointer-events-none fixed inset-0 -z-10">
+          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-pink-300 via-orange-200 to-yellow-200" />
+          <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full blur-3xl opacity-15 bg-gradient-to-tr from-violet-200 via-fuchsia-200 to-rose-200" />
+        </div>
+
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+        <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-md shadow-[0_1px_10px_rgba(0,0,0,0.03)]">
           <div className="mx-auto max-w-6xl px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between">
             <Link
               href="/"
@@ -65,17 +50,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <NavLinks />
             </div>
 
-            {/* ✅ Mobile hamburger (Lucide icon version) */}
+            {/* Mobile hamburger */}
             <details className="md:hidden relative">
               <summary
-                className="list-none inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border cursor-pointer text-foreground p-0"
+                className="list-none inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border cursor-pointer p-0"
                 aria-label="Open menu"
               >
                 <span className="sr-only">Open menu</span>
                 <MenuIcon className="h-5 w-5" aria-hidden="true" />
               </summary>
 
-              <div className="absolute right-0 mt-2 min-w-[220px] rounded-xl border border-border bg-background shadow">
+              <div className="absolute right-0 mt-2 min-w-[220px] rounded-xl border border-border bg-background shadow-md">
                 <div className="px-4 py-3">
                   <NavLinks />
                 </div>
