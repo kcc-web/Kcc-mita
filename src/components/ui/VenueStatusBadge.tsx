@@ -1,247 +1,148 @@
+// src/components/ui/VenueStatusBadge.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { MapPin, Clock, Users, ChevronRight } from 'lucide-react';
+import { venueStore } from '@/lib/venueStore';
+import { VenueConfig, VenueData, VenueStatus } from '@/lib/venueTheme';
 
-type VenueStatus = 'available' | 'moderate' | 'crowded';
+function useVenue() {
+  const [data, setData] = useState<VenueData>(() => venueStore.loadData());
+  const [cfg,  setCfg]  = useState<VenueConfig>(() => venueStore.loadConfig());
 
-type VenueData = {
-  status: VenueStatus;
-  location: string;
-  shortLocation: string;
-  hours: string;
-  waitTime: string;
-  lastUpdated: Date;
-};
-
-type StatusConfig = {
-  color: string;
-  bgGradient: string;
-  borderColor: string;
-  textColor: string;
-  icon: string;
-  mainText: string;
-  subText: string;
-  pulse: boolean;
-};
-
-const VenueStatusBadge = () => {
-  const pathname = usePathname();
-  const router = useRouter();
-  
-  // 診断中（/quiz ページ）の判定
-  const isDiagnosing = pathname === '/quiz' || 
-    (pathname?.startsWith('/quiz/') && !pathname?.includes('/intro'));
-  
-  // サンプルデータ（実際はAPIから取得）
-  const [venueData, setVenueData] = useState<VenueData>({
-    status: 'moderate',
-    location: '慶應義塾大学 三田キャンパス',
-    shortLocation: 'KCC三田',
-    hours: '10:00-18:00',
-    waitTime: '5-10分',
-    lastUpdated: new Date()
-  });
-
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  const getStatusConfig = (status: VenueStatus): StatusConfig => {
-    switch(status) {
-      case 'available':
-        return {
-          color: 'bg-green-500',
-          bgGradient: 'from-green-50 to-green-100',
-          borderColor: 'border-green-200',
-          textColor: 'text-green-700',
-          icon: '🟢',
-          mainText: 'すぐにご案内できます ☕️',
-          subText: 'お待たせせずにご提供中です',
-          pulse: false
-        };
-      case 'moderate':
-        return {
-          color: 'bg-yellow-500',
-          bgGradient: 'from-yellow-50 to-orange-50',
-          borderColor: 'border-yellow-200',
-          textColor: 'text-yellow-700',
-          icon: '🟡',
-          mainText: '少し賑わってます ☕️',
-          subText: `まもなくご案内（${venueData.waitTime}）`,
-          pulse: true
-        };
-      case 'crowded':
-        return {
-          color: 'bg-red-500',
-          bgGradient: 'from-red-50 to-orange-50',
-          borderColor: 'border-red-200',
-          textColor: 'text-red-700',
-          icon: '🔴',
-          mainText: '多くのお客様にご利用中 ☕️',
-          subText: '香りを楽しみながらお待ちください',
-          pulse: true
-        };
-      default:
-        return {
-          color: 'bg-gray-500',
-          bgGradient: 'from-gray-50 to-gray-100',
-          borderColor: 'border-gray-200',
-          textColor: 'text-gray-700',
-          icon: '⚫',
-          mainText: '準備中',
-          subText: '',
-          pulse: false
-        };
-    }
-  };
-
-  const statusConfig = getStatusConfig(venueData.status);
-
-  // リアルタイム更新のシミュレーション（本番では削除してAPI接続）
   useEffect(() => {
-    const interval = setInterval(() => {
-      const statuses: VenueStatus[] = ['available', 'moderate', 'crowded'];
-      const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-      setVenueData(prev => ({
-        ...prev,
-        status: randomStatus,
-        lastUpdated: new Date()
-      }));
-    }, 30000); // 30秒ごとに更新
-
-    return () => clearInterval(interval);
+    // 初回マウント時に最新値を同期
+    setData(venueStore.loadData());
+    setCfg(venueStore.loadConfig());
+    const onStorage = () => {
+      setData(venueStore.loadData());
+      setCfg(venueStore.loadConfig());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const handleClick = () => {
-    // /access ページへの遷移
-    if (!isExpanded) {
-      setIsExpanded(true);
-    } else {
-      router.push('/access');
-    }
-  };
+  return { data, cfg, setData, setCfg };
+}
 
-  // 診断中は非表示
+export default function VenueStatusBadge() {
+  const pathname = usePathname();
+  const router = useRouter();
+  const isDiagnosing =
+    pathname === '/quiz' || (pathname?.startsWith('/quiz/') && !pathname?.includes('/intro'));
+
+  const { data, cfg } = useVenue();
+
+  const pal = useMemo(() => cfg.palette[data.status], [cfg, data.status]);
+
+  // 設定された文言を決定
+  const { main, sub } = useMemo(() => {
+    if (data.status === 'available') {
+      return { main: cfg.copy.available.main, sub: cfg.copy.available.sub };
+    }
+    if (data.status === 'moderate') {
+      const txt = cfg.copy.moderate.subPrefix.replace('{wait}', data.waitTime || '');
+      return { main: cfg.copy.moderate.main, sub: txt };
+    }
+    return { main: cfg.copy.crowded.main, sub: cfg.copy.crowded.sub };
+  }, [cfg, data.status, data.waitTime]);
+
+  // 診断ページでは非表示
   if (isDiagnosing) return null;
 
+  // 下中央に固定（モバイル親指にも程よい）
   return (
-    <div className="fixed top-4 right-4 z-50">
-      {/* メインバッジ */}
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 px-3 w-full max-w-[720px] pointer-events-none">
       <div
-        onClick={handleClick}
-        className={`
-          relative cursor-pointer select-none
-          bg-gradient-to-br ${statusConfig.bgGradient}
-          backdrop-blur-md bg-opacity-95
-          border ${statusConfig.borderColor}
-          rounded-2xl shadow-lg
-          transition-all duration-300 ease-out
-          hover:scale-105 hover:shadow-xl
-          ${isExpanded ? 'w-80' : 'w-auto max-w-xs'}
-        `}
+        role="button"
+        aria-label="開催情報を見る"
+        onClick={() => router.push('/access')}
+        className="pointer-events-auto cursor-pointer"
+        style={
+          {
+            // カラーは CSS 変数で注入
+            // @ts-ignore
+            '--bgFrom': pal.bgFrom,
+            '--bgTo': pal.bgTo,
+            '--text': pal.text,
+            '--border': pal.border,
+            '--dot': pal.dot,
+            '--pulse': pal.pulse ?? pal.dot,
+          } as React.CSSProperties
+        }
       >
-        {/* パルスエフェクト */}
-        {statusConfig.pulse && (
-          <div className="absolute inset-0 rounded-2xl">
-            <div className={`absolute inset-0 rounded-2xl ${statusConfig.color} opacity-20 animate-pulse`} />
+        <div
+          className={`
+            mx-auto rounded-2xl border backdrop-blur-md shadow-lg
+            transition-all hover:shadow-xl
+          `}
+          style={{
+            background:
+              'linear-gradient(135deg, var(--bgFrom) 0%, var(--bgTo) 100%)',
+            borderColor: 'var(--border)',
+          }}
+        >
+          {/* パルスは薄めに */}
+          <div className="relative">
+            <div
+              className="absolute inset-0 rounded-2xl opacity-0 animate-[pulse_2.4s_ease-in-out_infinite]"
+              style={{ backgroundColor: 'var(--pulse)', opacity: 0.08 }}
+            />
+            <div className="relative px-4 sm:px-5 py-3 sm:py-3.5">
+              <div className="flex items-center gap-3 sm:gap-4">
+                {/* 左：ステータス丸＋テキスト */}
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <span
+                    aria-hidden
+                    className="inline-block h-3.5 w-3.5 rounded-full"
+                    style={{ backgroundColor: 'var(--dot)' }}
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <span
+                      className="text-[13px] sm:text-sm font-semibold leading-tight truncate"
+                      style={{ color: 'var(--text)' }}
+                    >
+                      {main}
+                    </span>
+                    <span className="text-[11px] sm:text-xs text-black/60 mt-0.5 truncate">
+                      {sub}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 仕切り */}
+                <div className="hidden sm:block h-6 w-px bg-black/10" />
+
+                {/* 中央：場所・時間（2カラム） */}
+                <div className="hidden sm:flex items-center gap-4 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <MapPin className="h-[14px] w-[14px] text-black/50" />
+                    <span className="text-xs text-black/70 truncate max-w-[150px]">
+                      {data.shortLocation}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-[14px] w-[14px] text-black/50" />
+                    <span className="text-xs text-black/70">{data.hours}</span>
+                  </div>
+                </div>
+
+                {/* 右：CTAアイコン */}
+                <div className="ml-auto flex items-center gap-1">
+                  <Users className="h-4 w-4 text-black/40" />
+                  <ChevronRight className="h-4 w-4 text-black/40" />
+                </div>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
 
-        <div className="relative p-3 px-4">
-          {/* コンパクト表示 */}
-          {!isExpanded && (
-            <div className="flex items-center gap-3">
-              {/* ステータスインジケーター */}
-              <div className="flex items-center gap-2">
-                <span className="text-lg">{statusConfig.icon}</span>
-                <div className="flex flex-col">
-                  <span className={`text-xs font-bold ${statusConfig.textColor}`}>
-                    {statusConfig.mainText}
-                  </span>
-                  <span className="text-[10px] text-gray-600 mt-0.5">
-                    {statusConfig.subText}
-                  </span>
-                </div>
-              </div>
-
-              {/* 場所と時間 */}
-              <div className="flex items-center gap-2 border-l pl-3 border-gray-300">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1">
-                    <MapPin size={10} className="text-gray-500" />
-                    <span className="text-[10px] font-medium text-gray-700">
-                      {venueData.shortLocation}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Clock size={10} className="text-gray-500" />
-                    <span className="text-[10px] font-medium text-gray-700">
-                      {venueData.hours}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <ChevronRight size={16} className="text-gray-400 ml-1" />
-            </div>
-          )}
-
-          {/* 展開表示 */}
-          {isExpanded && (
-            <div className="space-y-3">
-              {/* ヘッダー */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{statusConfig.icon}</span>
-                  <span className={`font-bold ${statusConfig.textColor}`}>
-                    {statusConfig.mainText}
-                  </span>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsExpanded(false);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* 詳細情報 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin size={14} className="text-gray-500" />
-                  <span className="text-gray-700">{venueData.location}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock size={14} className="text-gray-500" />
-                  <span className="text-gray-700">本日 {venueData.hours}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users size={14} className="text-gray-500" />
-                  <span className="text-gray-700">{statusConfig.subText}</span>
-                </div>
-              </div>
-
-              {/* アクションボタン */}
-              <button className="w-full bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium py-2 px-4 rounded-lg border border-gray-200 transition-colors">
-                詳細を見る →
-              </button>
-
-              {/* 最終更新 */}
-              <div className="text-center text-[10px] text-gray-400">
-                最終更新: {venueData.lastUpdated.toLocaleTimeString('ja-JP', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </div>
-            </div>
-          )}
+        {/* ちょい説明（モバイル時のみ） */}
+        <div className="sm:hidden mt-1 text-center text-[10px] text-black/45">
+          タップで詳細（地図・最新状況）へ
         </div>
       </div>
     </div>
   );
-};
-
-export default VenueStatusBadge;
+}
