@@ -34,7 +34,7 @@ export default function Home() {
           </h1>
 
           <p className="mt-3 text-base md:text-lg text-muted-foreground">
-            <span className="font-medium text-foreground">10問で、あなたの一杯が見つかる。</span>{" "}
+            <span className="font-medium text-foreground">4問で、あなたの一杯が見つかる。</span>{" "}
             診断結果から、三田祭で
             <span className="underline decoration-amber-400/70 underline-offset-2">その場で飲める</span>
             おすすめへ。
@@ -112,7 +112,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Intro：最初だけ5秒演出 */}
+      {/* Intro：最初だけ演出 */}
       <IntroOverlay />
     </main>
   );

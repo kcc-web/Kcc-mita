@@ -5,7 +5,9 @@ import { usePathname } from "next/navigation";
 
 export default function NavLinks() {
   const pathname = usePathname();
-  const hideMenu = pathname?.startsWith("/quiz");
+  // /quiz/intro は診断開始前なのでMenuを表示
+  // /quiz（診断中）のみMenuを非表示
+  const hideMenu = pathname === "/quiz" || pathname?.startsWith("/quiz/") && !pathname?.includes("/intro");
 
   const items = [
     { href: "/", label: "Home" },
