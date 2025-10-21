@@ -81,8 +81,8 @@ export default function VenueStatusBadge({
   // ひとまずハードコード（将来はAPI/管理画面から注入）
   const [data] = useState<VenueData>({
     status: "moderate",
-    location: "慶應義塾大学 三田キャンパス",
-    shortLocation: "KCC三田",
+    location: "第一校舎 133教室内",
+    shortLocation: "第一校舎 133教室",
     hours: "10:00-18:00",
     waitTime: "5-10分",
   });
