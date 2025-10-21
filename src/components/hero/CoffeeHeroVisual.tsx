@@ -1,8 +1,8 @@
 "use client";
 import dynamic from "next/dynamic";
-const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+import COFFEE from "../../../public/animations/coffee.json";
 
-const COFFEE = require("/public/animations/coffee.json");
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 export default function CoffeeHeroVisual() {
   return (
@@ -16,7 +16,7 @@ export default function CoffeeHeroVisual() {
         />
       </div>
 
-      {/* ← “coffee の下に” 見せたいコピー */}
+      {/* ← "coffee の下に" 見せたいコピー */}
       <div className="mt-2">
         <p className="text-sm text-muted-foreground">Keio Coffee Club</p>
         <p className="text-[15px] md:text-base">

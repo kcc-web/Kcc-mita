@@ -1,11 +1,7 @@
 // src/app/page.tsx
 import Link from "next/link";
 import { MapPin, Clock, Sparkles, Coffee, Utensils } from "lucide-react";
-
-// ✅ 末尾の空白を消す（ビルド事故防止）
 import IntroOverlay from "@/components/hero/IntroOverlay";
-// Hero右側に置く動的ビジュアル（前に作ったやつ）
-import CoffeeHeroVisual from "@/components/hero/CoffeeHeroVisual";
 
 export default function Home() {
   return (
@@ -20,9 +16,9 @@ export default function Home() {
         />
       </div>
 
-      {/* Hero：左テキスト／右アニメ＋コピー */}
-      <section className="grid grid-cols-1 md:grid-cols-2 items-center gap-10 mb-12">
-        <div className="text-center md:text-left">
+      {/* Hero：中央寄せシンプル */}
+      <section className="flex flex-col items-center text-center gap-6 mb-12">
+        <div>
           <p className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] text-muted-foreground bg-background/70 shadow-sm">
             <Sparkles className="h-3.5 w-3.5" />
             <span className="tracking-wide">Mita Festival 2025</span>
@@ -38,14 +34,14 @@ export default function Home() {
           </h1>
 
           <p className="mt-3 text-base md:text-lg text-muted-foreground">
-            <span className="font-medium text-foreground">4問で、あなたの一杯が見つかる。</span>{" "}
+            <span className="font-medium text-foreground">10問で、あなたの一杯が見つかる。</span>{" "}
             診断結果から、三田祭で
             <span className="underline decoration-amber-400/70 underline-offset-2">その場で飲める</span>
             おすすめへ。
           </p>
 
           {/* ダブルCTA（主従明確） */}
-          <div className="mt-6 flex items-center justify-center md:justify-start gap-3">
+          <div className="mt-6 flex items-center justify-center gap-3">
             <Link href="/quiz/intro" className="group">
               <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500 to-amber-400 text-white px-6 py-3 text-base font-medium shadow-[0_6px_24px_rgba(255,105,180,0.25)] transition-transform group-hover:scale-[1.02] active:scale-[.99]">
                 診断をはじめる
@@ -58,22 +54,10 @@ export default function Home() {
             </Link>
           </div>
         </div>
-
-        {/* 右：動的ビジュアル（下にコピーを出すコンポーネント） */}
-        <div className="flex justify-center md:justify-end">
-          <div className="relative">
-            {/* 薄いリングの飾り（温度感だけ足す） */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 -z-10 blur-2xl opacity-40 bg-[radial-gradient(ellipse_at_center,rgba(255,214,165,.45)_0%,transparent_55%)]"
-            />
-            <CoffeeHeroVisual />
-          </div>
-        </div>
       </section>
 
       {/* 2大CTAカード：ガラス調で統一 */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto md:mx-0">
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
         <Link href="/quiz/intro" className="group">
           <div className="relative overflow-hidden rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md">
             <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full blur-3xl opacity-30 bg-gradient-to-tr from-pink-300 via-rose-300 to-amber-300 group-hover:opacity-40" />
