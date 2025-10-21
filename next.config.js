@@ -4,37 +4,47 @@ const path = require("path");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
-    // ✅ 開発時（localhost）はCSPを付けない：NextのdevクライアントやHMRが動くように
+    // dev(ローカル)ではCSPを付けない
     if (process.env.NODE_ENV !== "production") return [];
 
-    // ✅ 本番のみ付与（Lottie JSONに After Effects の expression が残っている想定）
-    // 表現式なしJSONに切り替えたら 'unsafe-eval' を消してOK
+    // 本番CSP（まず通すために 'unsafe-inline' と 'unsafe-eval' を許可）
+    // ＊表現式なしのLottie JSONに切り替えられたら 'unsafe-eval' は外せます
+    // ＊inline script を消せたら 'unsafe-inline' も外せます
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval'",
+      "base-uri 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
-      "connect-src 'self'",
-      "worker-src 'self' blob:"
+      "connect-src 'self' https://vitals.vercel-insights.com",
+      "worker-src 'self' blob:",
+      "object-src 'none'",
+      "frame-ancestors 'self'"
     ].join("; ");
 
     return [
       {
-        source: "/",
+        // ✅ 全ページに適用
+        source: "/:path*",
         headers: [{ key: "Content-Security-Policy", value: csp }]
       }
     ];
   },
 
+  // 省略可：@animations エイリアスを使っているなら維持
   webpack(config) {
     config.resolve.alias = {
       ...(config.resolve.alias || {}),
       "@animations": path.resolve(__dirname, "src/animations")
     };
     return config;
-  }
+  },
+
+  // もし “ESLintでビルド落ち” を避けたいなら有効化（Flat Configに移行したら外してOK）
+  // eslint: { ignoreDuringBuilds: true },
 };
 
 module.exports = nextConfig;
+
 
 
