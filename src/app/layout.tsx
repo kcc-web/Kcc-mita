@@ -1,10 +1,10 @@
-// src/app/layout.tsx
 import "./globals.css";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { ReactNode } from "react";
 import { Menu as MenuIcon } from "lucide-react";
-import NavLinks from "@/components/ui/NavLinks"; // ← Client側に分離したナビを使用（usePathnameはここだけ）
+import NavLinks from "@/components/ui/NavLinks";
+import VenueStatusBadge from "@/components/ui/VenueStatusBadge"; // ← 追加
 
 export const metadata: Metadata = {
   title: "KCC Mita 2025",
@@ -33,6 +33,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-pink-300 via-orange-200 to-yellow-200" />
           <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full blur-3xl opacity-15 bg-gradient-to-tr from-violet-200 via-fuchsia-200 to-rose-200" />
         </div>
+
+        {/* 🆕 混雑状況バッジ（診断中は自動で非表示） */}
+        <VenueStatusBadge />
 
         {/* Header */}
         <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-md shadow-[0_1px_10px_rgba(0,0,0,0.03)]">
