@@ -7,10 +7,10 @@ import type { LottieRefCurrentProps } from "lottie-react";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
-// Lottie JSONファイルをインポート
-import dropAnimation from "../../../public/animations/drop-oil.json";
-import waveAnimation from "../../../public/animations/wave-variant.json";
-import coffeeAnimation from "../../../public/animations/coffee.json";
+// Lottie JSONファイルを動的にインポート（Vercel対応）
+const dropAnimation = require("@/../public/animations/drop-oil.json");
+const waveAnimation = require("@/../public/animations/wave-variant.json");
+const coffeeAnimation = require("@/../public/animations/coffee.json");
 
 type Phase = "start" | "drop" | "wave" | "coffee" | "fade";
 
