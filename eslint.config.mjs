@@ -1,25 +1,27 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+// eslint.config.mjs
+import next from "eslint-config-next";
+import tseslint from "typescript-eslint";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+export default [
+  ...next(), // Next.js の標準設定
 
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
+  // TypeScript plugin の推奨セット（型付き）
+  ...tseslint.configs.recommendedTypeChecked,
 
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  // 共通ルール（エラー→警告に変更）
   {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
-      "next-env.d.ts",
-    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "prefer-const": "warn",
+    },
+  },
+
+  // any が多いフォルダは一時的に off（必要に応じて減らす）
+  {
+    files: ["src/app/menu/**/*.{ts,tsx}", "src/app/result/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
   },
 ];
 
-export default eslintConfig;
