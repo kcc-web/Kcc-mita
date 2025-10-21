@@ -23,13 +23,11 @@ export default function IntroOverlay() {
   const waveRef   = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
-  // dev で reduce ならスキップ
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setShow(false);
   }, []);
 
-  // フェーズ遷移（Lottie成否に依存しない）
   useEffect(() => {
     if (!show) return;
     let t: ReturnType<typeof setTimeout> | null = null;
@@ -55,14 +53,12 @@ export default function IntroOverlay() {
     return () => { if (t) clearTimeout(t); };
   }, [phase, show]);
 
-  // 何があっても一定時間で閉じる保険
   useEffect(() => {
     if (!show) return;
     const killer = setTimeout(() => setShow(false), 8000);
     return () => clearTimeout(killer);
   }, [show]);
 
-  // ESC/Space でスキップ
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" || e.key === " ") setShow(false); };
     window.addEventListener("keydown", onKey);
@@ -106,7 +102,7 @@ export default function IntroOverlay() {
             <div className="absolute inset-0 flex items-center justify-center">
               <Lottie
                 lottieRef={dropRef}
-                animationData={dropAnim as any}
+                animationData={dropAnim as object}
                 loop={false}
                 autoplay
                 style={{ width: "100vw", height: "100vh", transform: "scale(1.5)" }}
@@ -119,7 +115,7 @@ export default function IntroOverlay() {
               <div style={{ width: 500, height: 500 }}>
                 <Lottie
                   lottieRef={waveRef}
-                  animationData={waveAnim as any}
+                  animationData={waveAnim as object}
                   loop={false}
                   autoplay
                   style={{ width: "100%", height: "100%" }}
@@ -138,7 +134,7 @@ export default function IntroOverlay() {
             >
               <Lottie
                 lottieRef={coffeeRef}
-                animationData={coffeeAnim as any}
+                animationData={coffeeAnim as object}
                 loop={false}
                 autoplay
                 style={{ width: 300, height: 300 }}
@@ -173,3 +169,4 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
+
