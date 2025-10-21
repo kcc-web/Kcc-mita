@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import type { LottieRefCurrentProps } from "lottie-react";
-import StreetlineBG from "./StreetlineBG";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
@@ -13,61 +12,53 @@ import dropAnimation from "../../../public/animations/drop-oil.json";
 import waveAnimation from "../../../public/animations/wave-variant.json";
 import coffeeAnimation from "../../../public/animations/coffee.json";
 
-type Phase = "city" | "drop" | "wave" | "coffee" | "fade";
+type Phase = "start" | "drop" | "wave" | "coffee" | "fade";
 
 // 各フェーズの表示時間（ミリ秒）
 const TIMINGS = {
-  city: 1500,      // 街の線画（長めに見せる）
-  drop: 3000,      // drop-oil.json（確実に再生）
-  wave: 3000,      // wave-variant.json（確実に再生）
-  coffee: 4000,    // coffee.json + テキスト
-  fade: 800,       // フェードアウト
+  start: 1200,     // 白背景スタート
+  drop: 1800,      // 雫が落ちる
+  wave: 2000,      // 波紋が広がる
+  coffee: 4000,    // コーヒー + テキスト
+  fade: 1000,
 };
 
 export default function IntroOverlay() {
-  const [phase, setPhase] = useState<Phase>("city");
+  const [phase, setPhase] = useState<Phase>("start");
   const [show, setShow] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const dropRef = useRef<LottieRefCurrentProps>(null);
   const waveRef = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
-  // 初回表示チェック
   useEffect(() => {
     if (typeof window === "undefined") return;
-    
-    // 動きを減らす設定の確認
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setShow(false);
       return;
     }
-
-    // 開発中はコメントアウト、本番ではコメントイン
-    // const hasSeenIntro = sessionStorage.getItem("kcc-intro-seen");
-    // if (hasSeenIntro) {
-    //   setShow(false);
-    //   return;
-    // }
-
     setLoaded(true);
-    // sessionStorage.setItem("kcc-intro-seen", "true");
   }, []);
 
-  // フェーズ自動遷移（タイムアウトベース）
+  useEffect(() => {
+    if (phase === "drop" && dropRef.current?.animationItem) {
+      dropRef.current.animationItem.setSpeed(2);
+    }
+  }, [phase]);
+
   useEffect(() => {
     if (!show || !loaded) return;
 
     let timer: NodeJS.Timeout;
 
     switch (phase) {
-      case "city":
-        timer = setTimeout(() => setPhase("drop"), TIMINGS.city);
+      case "start":
+        timer = setTimeout(() => setPhase("drop"), TIMINGS.start);
         break;
       case "drop":
         timer = setTimeout(() => setPhase("wave"), TIMINGS.drop);
         break;
       case "wave":
-        // Wave開始時に明示的に再生
         waveRef.current?.play();
         timer = setTimeout(() => setPhase("coffee"), TIMINGS.wave);
         break;
@@ -82,12 +73,9 @@ export default function IntroOverlay() {
     return () => clearTimeout(timer);
   }, [phase, show, loaded]);
 
-  // ESCまたはクリックでスキップ
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { 
-      if (e.key === "Escape" || e.key === " ") {
-        setShow(false);
-      }
+      if (e.key === "Escape" || e.key === " ") setShow(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -96,137 +84,215 @@ export default function IntroOverlay() {
   if (!show || !loaded) return null;
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       <motion.div
         key="intro"
         initial={{ opacity: 1 }}
-        animate={{ opacity: phase === "fade" ? 0 : 1 }}
+        animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.6, ease: "easeInOut" }}
-        className="fixed inset-0 z-[999] bg-[#0C0C0F] flex items-center justify-center cursor-pointer"
-        aria-label="Intro animation - Click or press ESC to skip"
+        transition={{ duration: 1, ease: "easeInOut" }}
+        className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
         onClick={() => setShow(false)}
       >
-        {/* スキップヒント + 現在のフェーズ表示（デバッグ用） */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          transition={{ delay: 0.5 }}
-          className="absolute top-6 right-6 text-right"
-        >
-          <p className="text-white/60 text-xs tracking-wider">SKIP (ESC)</p>
-          {/* デバッグ用：完成後は削除してOK */}
-          <p className="text-white/40 text-[10px] mt-1 font-mono">{phase.toUpperCase()}</p>
-        </motion.div>
-
-        {/* 背景：黒地の白線（cityフェーズで強く表示） */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: phase === "city" ? 1 : 0.2 }}
-          transition={{ duration: 0.8 }}
-          className="absolute inset-0"
-        >
-          <StreetlineBG stroke="#FFFFFF" glow="rgba(255,255,255,.9)" vpX={520} vpY={150} />
-        </motion.div>
-
-        {/* 中央：Drop → Wave → Coffee */}
-        <div className="relative w-full h-full flex flex-col items-center justify-center">
-          {phase === "drop" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Lottie
-                lottieRef={dropRef}
-                animationData={dropAnimation}
-                loop={false}
-                autoplay
-                style={{ width: 220, height: 220 }}
-                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-              />
-            </motion.div>
-          )}
-          
-          {phase === "wave" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 1.1 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.4 }}
-              style={{ position: "absolute" }}
-            >
-              <Lottie
-                lottieRef={waveRef}
-                animationData={waveAnimation}
-                loop={false}
-                autoplay
-                style={{ width: 300, height: 300 }}
-                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-              />
-            </motion.div>
-          )}
-          
-          {phase === "coffee" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="flex flex-col items-center"
-            >
-              <Lottie
-                lottieRef={coffeeRef}
-                animationData={coffeeAnimation}
-                loop={false}
-                autoplay
-                style={{ width: 280, height: 280 }}
-                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-              />
-              <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
-                className="mt-4 text-center"
-              >
-                <p className="text-white/90 text-base md:text-lg font-medium tracking-wide">
-                  Keio Coffee Club
-                </p>
-                <p className="text-white/70 text-sm mt-1">
-                  日常を彩る、一杯のコーヒー
-                </p>
-              </motion.div>
-            </motion.div>
-          )}
+        {/* ====== 背景：ずっと白 ====== */}
+        <div className="absolute inset-0 bg-white">
+          {/* 微かなノイズテクスチャ */}
+          <div 
+            className="absolute inset-0 opacity-[0.02]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+            }}
+          />
         </div>
 
-        {/* タグライン（下部） - coffeeフェーズでのみ表示 */}
-        {phase === "coffee" && (
-          <motion.div
-            initial={{ y: 8, opacity: 0 }}
-            animate={{ y: 0, opacity: 0.9 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-            className="absolute bottom-16 text-center px-6"
-          >
-            <p className="text-white/80 tracking-[0.12em] text-[12px] uppercase">
-              Brewing the Ordinary.
-            </p>
-          </motion.div>
-        )}
-
-        {/* 進行状況インジケーター */}
+        {/* ====== スキップヒント ====== */}
         <motion.div
-          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.4 }}
+          animate={{ opacity: 0.3 }}
           transition={{ delay: 0.5 }}
+          className="absolute top-6 right-6 text-right z-10"
         >
-          {["city", "drop", "wave", "coffee"].map((p) => (
-            <div
+          <p className="text-black/40 text-xs tracking-wider">
+            SKIP (ESC)
+          </p>
+        </motion.div>
+
+        {/* ====== 中央：アニメーション ====== */}
+        <div className="relative w-full h-full flex items-center justify-center">
+          
+          {/* Drop（雫）- フェードイン/アウト強化 */}
+          <AnimatePresence mode="wait">
+            {phase === "drop" && (
+              <motion.div
+                key="drop-anim"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ 
+                  opacity: { 
+                    duration: 0.5, 
+                    ease: "easeInOut" 
+                  } 
+                }}
+                className="absolute inset-0 flex items-center justify-center"
+                style={{ 
+                  width: "100vw", 
+                  height: "100vh",
+                }}
+              >
+                <div 
+                  style={{ 
+                    width: "100vw", 
+                    height: "100vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Lottie
+                    lottieRef={dropRef}
+                    animationData={dropAnimation}
+                    loop={false}
+                    autoplay={true}
+                    style={{ 
+                      width: "100%", 
+                      height: "100%",
+                      transform: "scale(1.5)",
+                    }}
+                    rendererSettings={{ 
+                      preserveAspectRatio: "xMidYMid meet",
+                    }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Wave（波紋）- クロスフェード */}
+          <AnimatePresence mode="wait">
+            {phase === "wave" && (
+              <motion.div
+                key="wave-anim"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1 }}
+                transition={{ 
+                  opacity: { 
+                    duration: 0.6, 
+                    ease: "easeInOut" 
+                  },
+                  scale: { 
+                    duration: 0.8, 
+                    ease: "easeOut" 
+                  }
+                }}
+                className="absolute flex items-center justify-center"
+              >
+                <div style={{ width: "500px", height: "500px" }}>
+                  <Lottie
+                    lottieRef={waveRef}
+                    animationData={waveAnimation}
+                    loop={false}
+                    autoplay={true}
+                    style={{ width: "100%", height: "100%" }}
+                    rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Coffee + テキスト - ゆったりフェードイン */}
+          <AnimatePresence mode="wait">
+            {phase === "coffee" && (
+              <motion.div
+                key="coffee-anim"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ 
+                  opacity: { 
+                    duration: 1, 
+                    ease: "easeOut" 
+                  },
+                  y: { 
+                    duration: 1, 
+                    ease: "easeOut" 
+                  }
+                }}
+                className="flex flex-col items-center"
+              >
+                <Lottie
+                  lottieRef={coffeeRef}
+                  animationData={coffeeAnimation}
+                  loop={false}
+                  autoplay={true}
+                  style={{ width: 300, height: 300 }}
+                  rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
+                />
+                {/* テキストも滑らかに */}
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ 
+                    delay: 0.2, // わずかな遅延で階層感
+                    duration: 1,
+                    ease: "easeOut"
+                  }}
+                  className="mt-4 text-center"
+                >
+                  <p className="text-gray-900 text-base md:text-lg font-medium tracking-wide">
+                    Keio Coffee Club
+                  </p>
+                  <p className="text-gray-600 text-sm mt-1">
+                    日常を彩る、一杯のコーヒー
+                  </p>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* ====== タグライン - ゆっくり浮き上がる ====== */}
+        <AnimatePresence mode="wait">
+          {phase === "coffee" && (
+            <motion.div
+              initial={{ y: 15, opacity: 0 }}
+              animate={{ y: 0, opacity: 0.8 }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                delay: 0.4,
+                duration: 1,
+                ease: "easeOut"
+              }}
+              className="absolute bottom-16 text-center px-6"
+            >
+              <p className="text-gray-500 tracking-[0.14em] text-[11px] uppercase">
+                Brewing the Ordinary.
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ====== 進行状況 - フェード ====== */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: phase === "fade" ? 0 : 0.3 }}
+          transition={{ duration: 0.5 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2"
+        >
+          {["start", "drop", "wave", "coffee"].map((p) => (
+            <motion.div
               key={p}
-              className={`h-1 w-8 rounded-full transition-all ${
-                p === phase ? "bg-white/80" : "bg-white/20"
+              className={`h-1 rounded-full ${
+                p === phase 
+                  ? "bg-black/60" 
+                  : "bg-black/15"
               }`}
+              animate={{
+                width: p === phase ? 40 : 24
+              }}
+              transition={{ duration: 0.3 }}
             />
           ))}
         </motion.div>
