@@ -1,16 +1,16 @@
 // src/app/api/admin/save/route.ts
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createClient as createServerOnlyClient } from "@supabase/supabase-js";
 
-// 必須：Vercel/ローカルの両方で env を設定しておく
-const URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SRV  = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+if (!URL || !SRV) {
+  throw new Error("Missing SUPABASE envs: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+}
 
 function serverClient() {
-  // Cookieは使わないのでダミー実装でOK
-  return createServerClient(URL, SRV, {
-    cookies: { get() { return undefined; } },
-  });
+  return createServerOnlyClient(URL, SRV);
 }
 
 export async function POST(req: Request) {
@@ -18,63 +18,63 @@ export async function POST(req: Request) {
     const supabase = serverClient();
     const { venue, settings } = await req.json();
 
-    // --- venue 確保（無ければ作る）
-    let { data: v } = await supabase.from("venue").select("*").limit(1).single();
+    // --- venue 確保（無ければ作成）
+    let { data: v, error: vselErr } = await supabase.from("venue").select("*").limit(1).single();
+    // PostgREST: データなしは PGRST116（No rows found）
+    if (vselErr && vselErr.code !== "PGRST116") throw vselErr;
+
     if (!v) {
-      const { data: inserted } = await supabase
+      const { data: inserted, error: vInsErr } = await supabase
         .from("venue")
         .insert({
           status: "moderate",
           wait_from: 5,
           wait_to: 10,
           short_location: "KCC三田",
-          hours: "10:00-18:00",
+          hours: "10:00-18:00"
         })
         .select()
         .single();
+      if (vInsErr) throw vInsErr;
       v = inserted!;
     }
 
-    // payload から id/updated_at を落とす
-    const { id: venueId, updated_at: _vu, ...venuePayload } = venue ?? {};
-    // venueId が undefined の場合は既存の v.id を採用
-    const targetVenueId = venueId ?? v.id;
-
-    // 数値にそろえる
-    if (venuePayload.wait_from != null) venuePayload.wait_from = Number(venuePayload.wait_from);
-    if (venuePayload.wait_to   != null) venuePayload.wait_to   = Number(venuePayload.wait_to);
-
     // venue 更新
-    const { error: e1, data: vd } = await supabase
+    const { id: venueId, updated_at: _vu, ...venuePayload } = venue ?? {};
+    const targetVenueId = venueId ?? v.id;
+    if (venuePayload.wait_from != null) venuePayload.wait_from = Number(venuePayload.wait_from);
+    if (venuePayload.wait_to != null) venuePayload.wait_to = Number(venuePayload.wait_to);
+
+    const { data: vd, error: e1 } = await supabase
       .from("venue")
       .update(venuePayload)
       .eq("id", targetVenueId)
       .select()
       .single();
-
     if (e1) throw e1;
 
-    // --- settings 確保（無ければ作る）
-    let { data: s } = await supabase.from("settings").select("*").eq("id", 1).single();
+    // --- settings 確保（無ければ作成）
+    let { data: s, error: sselErr } = await supabase.from("settings").select("*").eq("id", 1).single();
+    if (sselErr && sselErr.code !== "PGRST116") throw sselErr;
+
     if (!s) {
-      const { data: insertedS } = await supabase
+      const { data: insertedS, error: sInsErr } = await supabase
         .from("settings")
         .insert({ id: 1 })
         .select()
         .single();
+      if (sInsErr) throw sInsErr;
       s = insertedS!;
     }
 
-    const { id: _sid, updated_at: _su, ...settingsPayload } = settings ?? {};
-
     // settings 更新
-    const { error: e2, data: sd } = await supabase
+    const { id: _sid, updated_at: _su, ...settingsPayload } = settings ?? {};
+    const { data: sd, error: e2 } = await supabase
       .from("settings")
       .update(settingsPayload)
       .eq("id", 1)
       .select()
       .single();
-
     if (e2) throw e2;
 
     return NextResponse.json({ ok: true, venue: vd, settings: sd });
@@ -83,3 +83,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: err?.message ?? String(err) }, { status: 400 });
   }
 }
+
+

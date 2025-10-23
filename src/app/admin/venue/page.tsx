@@ -1,324 +1,194 @@
 // src/app/admin/venue/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect, useState, useMemo } from "react";
 
 type VenueStatus = "available" | "moderate" | "crowded";
+type Venue = {
+  id?: number;
+  status?: VenueStatus;
+  wait_from?: number | null;
+  wait_to?: number | null;
+  short_location?: string | null;
+  hours?: string | null;
+};
+type Settings = {
+  id?: number;
+  banner_text?: string | null;
+  show_banner?: boolean | null;
+};
 
 export default function AdminVenuePage() {
-  const supabase = createClient();
-  const [venue, setVenue] = useState<any>(null);
-  const [settings, setSettings] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [venue, setVenue] = useState<Venue>({
+    status: "moderate",
+    wait_from: 5,
+    wait_to: 10,
+    short_location: "KCC三田",
+    hours: "10:00-18:00"
+  });
+  const [settings, setSettings] = useState<Settings>({
+    banner_text: "ご来店ありがとうございます！",
+    show_banner: true
+  });
+  const [message, setMessage] = useState<string | null>(null);
 
+  // 既存値の取得（任意：必要な場合のみ）
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      const { data: v } = await supabase.from("venue").select("*").limit(1).single();
-      const { data: s } = await supabase.from("settings").select("*").eq("id", 1).single();
-      setVenue(v);
-      setSettings(s);
-      setLoading(false);
-    })();
-  }, [supabase]);
+    let aborted = false;
+    const load = async () => {
+      try {
+        // 公開エンドポイントを用意していないなら、いったん固定初期値でOK。
+        // もし既存値を読みたい場合は /api/admin/load を作って service_role で読む or anonでRLS許可
+      } catch {
+        // no-op
+      }
+    };
+    load();
+    return () => {
+      aborted = true;
+    };
+  }, []);
 
-  const setVenueField = (key: string, value: any) =>
-    setVenue((prev: any) => ({ ...prev, [key]: value }));
+  const canSave = useMemo(() => {
+    if (!venue) return false;
+    if (venue.wait_from != null && isNaN(Number(venue.wait_from))) return false;
+    if (venue.wait_to != null && isNaN(Number(venue.wait_to))) return false;
+    return true;
+  }, [venue]);
 
-  const setSettingsField = (key: string, value: any) =>
-    setSettings((prev: any) => ({ ...prev, [key]: value }));
-
-  const saveAll = async () => {
-    if (!venue || !settings) return;
+  const onSave = async () => {
     setSaving(true);
-    setMsg(null);
-
-    // 送信時は id / updated_at を落とす（更新禁止カラム対策）
-    const { id: _vid, updated_at: _vu, ...venuePayload } = venue;
-    const {
-      id: _sid,
-      updated_at: _su,
-      ...settingsPayload
-    } = settings;
-
-    // 数値系は number にそろえる
-    if (venuePayload.wait_from != null) venuePayload.wait_from = Number(venuePayload.wait_from);
-    if (venuePayload.wait_to != null) venuePayload.wait_to = Number(venuePayload.wait_to);
-
-    const res = await fetch("/api/admin/save", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ venue: venuePayload, settings: settingsPayload }),
-    });
-
-    const json = await res.json();
-    setSaving(false);
-
-    if (!res.ok || !json.ok) {
-      setMsg(`保存に失敗：${json.error ?? res.statusText}`);
-      return;
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ venue, settings })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error ?? "保存に失敗しました");
+      }
+      setMessage("✅ 保存しました");
+    } catch (e: any) {
+      setMessage(`❌ ${e.message ?? "保存エラー"}`);
+    } finally {
+      setSaving(false);
     }
-    setVenue(json.venue);
-    setSettings(json.settings);
-    setMsg("✅ Supabaseに保存しました（トップのバッジへ即反映）");
   };
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">読み込み中…</div>;
-
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-semibold mb-6">会場バッジ 管理</h1>
+    <main className="mx-auto max-w-3xl p-6 space-y-6">
+      <h1 className="text-2xl font-bold">混雑表示・設定（Admin）</h1>
 
-      {/* 運営値（venue） */}
-      <section className="mb-10 space-y-4">
-        <h2 className="text-lg font-medium">運営情報（venue テーブル）</h2>
+      <section className="rounded-2xl border p-4 space-y-4">
+        <h2 className="text-xl font-semibold">Venue</h2>
 
-        <label className="block">
-          <span className="text-sm text-muted-foreground">ステータス</span>
-          <select
-            value={venue.status as VenueStatus}
-            onChange={(e) => setVenueField("status", e.target.value as VenueStatus)}
-            className="mt-1 w-full rounded-md border px-3 py-2"
-          >
-            <option value="available">🟢 空いている</option>
-            <option value="moderate">🟡 やや混雑</option>
-            <option value="crowded">🔴 混雑</option>
-          </select>
-        </label>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-600">Status</span>
+            <select
+              className="rounded-md border px-3 py-2"
+              value={venue.status ?? "moderate"}
+              onChange={(e) =>
+                setVenue((v) => ({ ...v, status: e.target.value as VenueStatus }))
+              }
+            >
+              <option value="available">available（空いてる）</option>
+              <option value="moderate">moderate（やや混雑）</option>
+              <option value="crowded">crowded（混雑）</option>
+            </select>
+          </label>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <label className="block">
-            <span className="text-sm text-muted-foreground">待ち時間 from（分）</span>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-600">待ち時間 From（分）</span>
             <input
               type="number"
+              className="rounded-md border px-3 py-2"
               value={venue.wait_from ?? ""}
-              onChange={(e) => setVenueField("wait_from", e.target.value === "" ? null : Number(e.target.value))}
-              className="mt-1 w-full rounded-md border px-3 py-2"
+              onChange={(e) =>
+                setVenue((v) => ({ ...v, wait_from: e.target.value === "" ? null : Number(e.target.value) }))
+              }
             />
           </label>
-          <label className="block">
-            <span className="text-sm text-muted-foreground">待ち時間 to（分）</span>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-600">待ち時間 To（分）</span>
             <input
               type="number"
+              className="rounded-md border px-3 py-2"
               value={venue.wait_to ?? ""}
-              onChange={(e) => setVenueField("wait_to", e.target.value === "" ? null : Number(e.target.value))}
-              className="mt-1 w-full rounded-md border px-3 py-2"
+              onChange={(e) =>
+                setVenue((v) => ({ ...v, wait_to: e.target.value === "" ? null : Number(e.target.value) }))
+              }
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm text-gray-600">短い場所名</span>
+            <input
+              className="rounded-md border px-3 py-2"
+              value={venue.short_location ?? ""}
+              onChange={(e) =>
+                setVenue((v) => ({ ...v, short_location: e.target.value }))
+              }
+              placeholder="KCC三田 など"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 sm:col-span-2">
+            <span className="text-sm text-gray-600">営業時間表示</span>
+            <input
+              className="rounded-md border px-3 py-2"
+              value={venue.hours ?? ""}
+              onChange={(e) => setVenue((v) => ({ ...v, hours: e.target.value }))}
+              placeholder="10:00-18:00"
             />
           </label>
         </div>
-
-        <label className="block">
-          <span className="text-sm text-muted-foreground">短い場所名（バッジ表示）</span>
-          <input
-            value={venue.short_location ?? ""}
-            onChange={(e) => setVenueField("short_location", e.target.value)}
-            className="mt-1 w-full rounded-md border px-3 py-2"
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-sm text-muted-foreground">営業時間（例: 10:00-18:00）</span>
-          <input
-            value={venue.hours ?? ""}
-            onChange={(e) => setVenueField("hours", e.target.value)}
-            className="mt-1 w-full rounded-md border px-3 py-2"
-          />
-        </label>
       </section>
 
-      {/* 文言（settings） */}
-      <section className="mb-10 space-y-4">
-        <h2 className="text-lg font-medium">文言設定（settings テーブル）</h2>
+      <section className="rounded-2xl border p-4 space-y-4">
+        <h2 className="text-xl font-semibold">Settings</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TextField
-            label="すぐにご案内（available.main）"
-            value={settings.copy_available_main ?? ""}
-            onChange={(v) => setSettingsField("copy_available_main", v)}
-          />
-          <TextField
-            label="すぐにご案内・サブ（available.sub）"
-            value={settings.copy_available_sub ?? ""}
-            onChange={(v) => setSettingsField("copy_available_sub", v)}
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={!!settings.show_banner}
+              onChange={(e) =>
+                setSettings((s) => ({ ...s, show_banner: e.target.checked }))
+              }
+            />
+            <span>バナーを表示</span>
+          </label>
 
-          <TextField
-            label="やや混雑（moderate.main）"
-            value={settings.copy_moderate_main ?? ""}
-            onChange={(v) => setSettingsField("copy_moderate_main", v)}
-          />
-          <TextField
-            label="やや混雑・サブ テンプレ（moderate.sub_tmpl）"
-            hint="例: まもなくご案内（{from}{unit}{dash}{to}{unit}）"
-            value={settings.copy_moderate_sub_tmpl ?? ""}
-            onChange={(v) => setSettingsField("copy_moderate_sub_tmpl", v)}
-          />
-
-          <TextField
-            label="混雑（crowded.main）"
-            value={settings.copy_crowded_main ?? ""}
-            onChange={(v) => setSettingsField("copy_crowded_main", v)}
-          />
-          <TextField
-            label="混雑・サブ（crowded.sub）"
-            value={settings.copy_crowded_sub ?? ""}
-            onChange={(v) => setSettingsField("copy_crowded_sub", v)}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          <PaletteGroup
-            title="🟢 Available"
-            s={settings}
-            prefix="color_available_"
-            onChange={setSettingsField}
-          />
-          <PaletteGroup
-            title="🟡 Moderate"
-            s={settings}
-            prefix="color_moderate_"
-            onChange={setSettingsField}
-          />
-          <PaletteGroup
-            title="🔴 Crowded"
-            s={settings}
-            prefix="color_crowded_"
-            onChange={setSettingsField}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <TextField
-            label="単位（wait_unit）"
-            value={settings.wait_unit ?? "分"}
-            onChange={(v) => setSettingsField("wait_unit", v)}
-          />
-          <TextField
-            label="区切り記号（dash_symbol）"
-            value={settings.dash_symbol ?? "〜"}
-            onChange={(v) => setSettingsField("dash_symbol", v)}
-          />
+          <label className="flex flex-col gap-1 sm:col-span-2">
+            <span className="text-sm text-gray-600">バナー文言</span>
+            <input
+              className="rounded-md border px-3 py-2"
+              value={settings.banner_text ?? ""}
+              onChange={(e) =>
+                setSettings((s) => ({ ...s, banner_text: e.target.value }))
+              }
+              placeholder="ご来店ありがとうございます！"
+            />
+          </label>
         </div>
       </section>
 
       <div className="flex items-center gap-3">
         <button
-          onClick={saveAll}
-          disabled={saving}
-          className="rounded-md bg-black text-white px-4 py-2 hover:bg-gray-800 disabled:opacity-60"
+          onClick={onSave}
+          disabled={!canSave || saving}
+          className="rounded-md border px-4 py-2 font-medium hover:bg-gray-50 disabled:opacity-50"
         >
-          {saving ? "保存中…" : "Supabaseに保存"}
+          {saving ? "保存中..." : "保存する"}
         </button>
-        {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+        {message && <p className="text-sm">{message}</p>}
       </div>
-
-      <p className="mt-6 text-xs text-muted-foreground">
-        保存すると、トップページの混雑バッジへ Realtime で即反映されます。
-      </p>
-    </div>
+    </main>
   );
 }
 
-/* ---------- 小さな入力コンポーネント ---------- */
-
-function TextField({
-  label,
-  value,
-  onChange,
-  hint,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  hint?: string;
-}) {
-  return (
-    <label className="block">
-      <span className="text-sm">{label}</span>
-      {hint && <span className="ml-2 text-xs text-muted-foreground">{hint}</span>}
-      <input
-        className="mt-1 w-full rounded-md border px-3 py-2"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
-  );
-}
-
-function PaletteGroup({
-  title,
-  s,
-  prefix,
-  onChange,
-}: {
-  title: string;
-  s: any;
-  prefix: string;
-  onChange: (key: string, v: string) => void;
-}) {
-  return (
-    <div className="rounded-xl border p-4">
-      <div className="font-medium mb-3">{title}</div>
-      <div className="grid grid-cols-2 gap-3">
-        <ColorField
-          label="bg_from"
-          value={s[`${prefix}bg_from`] ?? ""}
-          onChange={(v) => onChange(`${prefix}bg_from`, v)}
-        />
-        <ColorField
-          label="bg_to"
-          value={s[`${prefix}bg_to`] ?? ""}
-          onChange={(v) => onChange(`${prefix}bg_to`, v)}
-        />
-        <ColorField
-          label="text"
-          value={s[`${prefix}text`] ?? ""}
-          onChange={(v) => onChange(`${prefix}text`, v)}
-        />
-        <ColorField
-          label="border"
-          value={s[`${prefix}border`] ?? ""}
-          onChange={(v) => onChange(`${prefix}border`, v)}
-        />
-        <ColorField
-          label="dot"
-          value={s[`${prefix}dot`] ?? ""}
-          onChange={(v) => onChange(`${prefix}dot`, v)}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <div className="mt-1 flex items-center gap-2">
-        <input
-          type="color"
-          className="h-9 w-9 rounded-md border"
-          value={value || "#ffffff"}
-          onChange={(e) => onChange(e.target.value)}
-        />
-        <input
-          className="flex-1 rounded-md border px-2 py-1 text-sm"
-          value={value || ""}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="#RRGGBB"
-        />
-      </div>
-    </label>
-  );
-}
