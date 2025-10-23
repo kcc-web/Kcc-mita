@@ -24,7 +24,7 @@ export default function Home() {
             <span className="tracking-wide">Mita Festival 2025</span>
             <span className="mx-1 text-foreground/30">•</span>
             <Clock className="h-3.5 w-3.5" />
-            <span>10:00–17:00</span>
+            <span>10:00–18:00</span>
           </p>
 
           <h1 className="mt-4 text-4xl md:text-5xl font-semibold leading-tight tracking-tight">
