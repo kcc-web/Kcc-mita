@@ -13,14 +13,14 @@ import coffeeAnim from "@/animations/coffee.json";
 
 type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
 
-// ✨ タイミング調整: wave延長、coffee余韻追加
+// ✨ タイミング調整: wave延長、coffee余韻追加、フェードアウト延長
 const TIMINGS = { 
   start: 800,   // 初期待機
   drop: 1800,   // ドロップアニメーション
   wave: 2500,   // 波（延長: 2000→3200でゆっくり）
   coffee: 3500, // コーヒー表示時間（延長: 3000→3500）
-  linger: 1200, // 余韻（新規追加: coffeeが表示されたまま少し待つ）
-  fade: 1000    // フェードアウト（延長: 600→1000でゆっくり）
+  linger: 1500, // 余韻（延長: 1200→1500でさらにゆっくり）
+  fade: 1800    // フェードアウト（延長: 1000→1800でじっくり消える）
 } as const;
 
 export default function IntroOverlay() {
@@ -92,7 +92,10 @@ export default function IntroOverlay() {
         initial={{ opacity: 1 }}
         animate={{ opacity: phase === "fade" ? 0 : 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: TIMINGS.fade / 1000 }} // ゆっくりフェード
+        transition={{ 
+          duration: TIMINGS.fade / 1000,
+          ease: [0.43, 0.13, 0.23, 0.96] // カスタムイージング: ゆっくり始まり、ゆっくり終わる
+        }}
         className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
         style={{
           background: phase === "coffee" || phase === "linger"
@@ -178,12 +181,14 @@ export default function IntroOverlay() {
           
           {(phase === "coffee" || phase === "linger") && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
-            >
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    // ❶ exitにtransitionを移す（ここにduration/easeを書く）
+    exit={{ opacity: 0, scale: 0.98, transition: { duration: 1.5, ease: [0.43, 0.13, 0.23, 0.96] } }}
+    // ❷ transitionからexitキーを削除
+    transition={{ duration: 0.8, ease: "easeOut" }}
+    className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
+  >
               {/* コーヒーアニメーション */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
