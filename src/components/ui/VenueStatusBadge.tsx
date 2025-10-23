@@ -6,12 +6,21 @@ import { MapPin, Clock, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { composeCopy, pickColors } from "@/lib/format";
 
+// 日本語ステータスラベル
+const STATUS_LABEL: Record<string, string> = {
+  available: "空いてる",
+  moderate: "やや混雑",
+  crowded: "混雑",
+};
+
 export default function VenueStatusBadge({
   initialVenue,
   initialSettings,
   className = "",
 }: {
-  initialVenue: any; initialSettings: any; className?: string;
+  initialVenue: any;
+  initialSettings: any;
+  className?: string;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [venue, setVenue] = useState(initialVenue);
@@ -48,86 +57,129 @@ export default function VenueStatusBadge({
 
   const copy = composeCopy(venue, settings);
   const pal =
-    venue.status === "available" ? settings.colors.available :
-    venue.status === "moderate"  ? settings.colors.moderate  :
-                                   settings.colors.crowded;
+    venue.status === "available"
+      ? settings.colors.available
+      : venue.status === "moderate"
+      ? settings.colors.moderate
+      : settings.colors.crowded;
+
+  const statusLabel = STATUS_LABEL[venue.status] || "不明";
 
   return (
     <div className={`relative ${className}`}>
-      {/* コンパクト表示（常時表示） */}
+      {/* メインバッジ（常時表示） */}
       <button
-        className="inline-flex items-center gap-2 min-w-0 rounded-2xl border px-2.5 sm:px-3.5 py-1.5 sm:py-2 shadow-sm hover:shadow-md transition cursor-pointer w-full"
-        style={{ background: `linear-gradient(135deg, ${pal.bgFrom}, ${pal.bgTo})`, borderColor: pal.border }}
+        className="inline-flex items-center gap-2 sm:gap-3 min-w-0 rounded-2xl border px-3 sm:px-4 py-2 sm:py-2.5 shadow-sm hover:shadow-md transition-all cursor-pointer w-full"
+        style={{
+          background: `linear-gradient(135deg, ${pal.bgFrom}, ${pal.bgTo})`,
+          borderColor: pal.border,
+        }}
         onClick={() => setExpanded(!expanded)}
         aria-label="混雑状況の詳細を表示"
         aria-expanded={expanded}
       >
         {/* ステータスドット */}
-        <span 
-          className="inline-block h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0" 
-          style={{ backgroundColor: pal.dot }} 
+        <span
+          className="inline-block h-3 w-3 rounded-full flex-shrink-0 shadow-sm"
+          style={{ backgroundColor: pal.dot }}
         />
-        
-        {/* メインテキスト */}
-        <div className="flex-1 min-w-0">
-          <span 
-            className="block text-[10px] sm:text-sm font-semibold leading-tight truncate" 
+
+        {/* ステータステキスト + メインコピー */}
+        <div className="flex-1 min-w-0 text-left">
+          <div className="flex items-baseline gap-2">
+            <span
+              className="text-xs sm:text-sm font-bold leading-tight"
+              style={{ color: pal.text }}
+            >
+              {statusLabel}
+            </span>
+            <span
+              className="hidden sm:inline text-xs font-medium opacity-80"
+              style={{ color: pal.text }}
+            >
+              {copy.main}
+            </span>
+          </div>
+          {/* 待ち時間（デスクトップのみ） */}
+          <span
+            className="hidden lg:block text-[11px] opacity-70 truncate mt-0.5"
             style={{ color: pal.text }}
           >
-            {copy.main}
-          </span>
-          {/* スマホでは待ち時間を非表示 */}
-          <span className="hidden sm:block text-[10px] sm:text-xs text-black/60 truncate">
             {copy.sub}
           </span>
         </div>
 
         {/* 場所（タブレット以上） */}
-        <div className="hidden md:flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5 text-black/50 flex-shrink-0" />
-          <span className="text-[11px] text-black/70 whitespace-nowrap">
+        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
+          <MapPin className="h-4 w-4 opacity-60" style={{ color: pal.text }} />
+          <span className="text-xs font-medium whitespace-nowrap" style={{ color: pal.text }}>
             {venue.short_location}
           </span>
         </div>
 
         {/* 時間（タブレット以上） */}
-        <div className="hidden md:flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5 text-black/50 flex-shrink-0" />
-          <span className="text-[11px] text-black/70 whitespace-nowrap">
+        <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
+          <Clock className="h-4 w-4 opacity-60" style={{ color: pal.text }} />
+          <span className="text-xs font-medium whitespace-nowrap" style={{ color: pal.text }}>
             {venue.hours}
           </span>
         </div>
 
         {/* 展開アイコン（スマホのみ） */}
         <ChevronDown
-          className={`h-3.5 w-3.5 text-black/40 flex-shrink-0 transition-transform md:hidden ${
-            expanded ? 'rotate-180' : ''
+          className={`h-4 w-4 flex-shrink-0 transition-transform md:hidden ${
+            expanded ? "rotate-180" : ""
           }`}
+          style={{ color: pal.text, opacity: 0.5 }}
         />
       </button>
 
       {/* 展開時の詳細表示（スマホのみ） */}
       {expanded && (
         <div
-          className="md:hidden absolute top-full left-0 right-0 mt-1 rounded-xl border shadow-lg z-50 p-3 space-y-2"
-          style={{ 
-            background: `linear-gradient(135deg, ${pal.bgFrom}, ${pal.bgTo})`, 
-            borderColor: pal.border 
+          className="md:hidden absolute top-full left-0 right-0 mt-2 rounded-xl border shadow-lg z-50 p-4 space-y-3"
+          style={{
+            background: `linear-gradient(135deg, ${pal.bgFrom}, ${pal.bgTo})`,
+            borderColor: pal.border,
           }}
         >
           {/* 待ち時間 */}
-          <div className="text-[11px] text-black/70">{copy.sub}</div>
-          
+          <div className="flex items-start gap-2">
+            <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: pal.text, opacity: 0.7 }} />
+            <div>
+              <p className="text-xs font-semibold" style={{ color: pal.text }}>
+                待ち時間
+              </p>
+              <p className="text-sm" style={{ color: pal.text }}>
+                {copy.sub}
+              </p>
+            </div>
+          </div>
+
           {/* 場所 */}
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-black/50 flex-shrink-0" />
-            <span className="text-xs text-black/80">{venue.short_location}</span>
+          <div className="flex items-start gap-2">
+            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: pal.text, opacity: 0.7 }} />
+            <div>
+              <p className="text-xs font-semibold" style={{ color: pal.text }}>
+                開催場所
+              </p>
+              <p className="text-sm" style={{ color: pal.text }}>
+                {venue.short_location}
+              </p>
+            </div>
           </div>
 
           {/* 営業時間 */}
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-black/50 flex-shrink-0" />
-            <span className="text-xs text-black/80">{venue.hours}</span>
+          <div className="flex items-start gap-2">
+            <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" style={{ color: pal.text, opacity: 0.7 }} />
+            <div>
+              <p className="text-xs font-semibold" style={{ color: pal.text }}>
+                営業時間
+              </p>
+              <p className="text-sm" style={{ color: pal.text }}>
+                {venue.hours}
+              </p>
+            </div>
           </div>
         </div>
       )}

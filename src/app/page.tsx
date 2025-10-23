@@ -1,118 +1,110 @@
 // src/app/page.tsx
 import Link from "next/link";
-import { MapPin, Clock, Sparkles, Coffee, Utensils } from "lucide-react";
+import { MapPin, Clock, Sparkles } from "lucide-react";
 import IntroOverlay from "@/components/hero/IntroOverlay";
 
 export default function Home() {
   return (
     <main className="relative mx-auto max-w-6xl px-4 md:px-6 lg:px-8 py-14">
-      {/* 背景：夜の余韻 → 朝の気配（軽量グロー＋極薄グリッド） */}
+      {/* 🎨 フェスティバル感あふれる背景グラデーション */}
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-25 bg-gradient-to-tr from-amber-200 via-rose-200 to-pink-200" />
-        <div className="absolute -bottom-28 -right-20 h-96 w-96 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-rose-200 via-fuchsia-200 to-indigo-200" />
+        {/* メイングラデーション（ピンク→オレンジ→アンバー） */}
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-100 via-orange-50 to-amber-100" />
+        
+        {/* 動的ブロブ */}
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full blur-3xl opacity-30 bg-gradient-to-tr from-pink-400 via-rose-300 to-orange-300 animate-blob" />
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full blur-3xl opacity-25 bg-gradient-to-tr from-amber-400 via-orange-300 to-yellow-300 animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-fuchsia-300 via-pink-300 to-rose-300 animate-blob animation-delay-4000" />
+        
+        {/* 極薄グリッド（オプション） */}
         <div
           aria-hidden
-          className="absolute inset-0 opacity-[0.035] bg-[linear-gradient(0deg,transparent_24px,rgba(0,0,0,.14)_25px),linear-gradient(90deg,transparent_24px,rgba(0,0,0,.14)_25px)] bg-[length:25px_25px]"
+          className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(0deg,transparent_24px,rgba(0,0,0,.08)_25px),linear-gradient(90deg,transparent_24px,rgba(0,0,0,.08)_25px)] bg-[length:25px_25px]"
         />
       </div>
 
-      {/* Hero：中央寄せシンプル */}
-      <section className="flex flex-col items-center text-center gap-6 mb-12">
+      {/* ✨ Hero：ブランドとキャッチコピー全面表示 */}
+      <section className="flex flex-col items-center text-center gap-8 mb-16">
+        {/* バッジ */}
         <div>
-          <p className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[11px] text-muted-foreground bg-background/70 shadow-sm">
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-pink-300/40 bg-white/70 backdrop-blur-sm px-4 py-1.5 text-xs text-pink-900 shadow-sm">
             <Sparkles className="h-3.5 w-3.5" />
-            <span className="tracking-wide">Mita Festival 2025</span>
-            <span className="mx-1 text-foreground/30">•</span>
-            <Clock className="h-3.5 w-3.5" />
-            <span>10:00–18:00</span>
+            <span className="tracking-wide font-medium">Mita Festival 2025</span>
           </p>
+        </div>
 
-          <h1 className="mt-4 text-4xl md:text-5xl font-semibold leading-tight tracking-tight">
-            <span className="bg-gradient-to-r from-neutral-900 to-neutral-600 dark:from-white dark:to-white/70 bg-clip-text text-transparent">
-              KCC Mita 2025
+        {/* ブランド名 */}
+        <div className="space-y-3">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight">
+            <span className="bg-gradient-to-r from-pink-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">
+              Keio Coffee Club
             </span>
           </h1>
-
-          <p className="mt-3 text-base md:text-lg text-muted-foreground">
-            <span className="font-medium text-foreground">10問で、あなたの一杯が見つかる。</span>{" "}
-            診断結果から、三田祭で
-            <span className="underline decoration-amber-400/70 underline-offset-2">その場で飲める</span>
-            おすすめへ。
+          
+          {/* メインキャッチコピー（全面的に） */}
+          <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-800 leading-relaxed">
+            日常を彩る、一杯のコーヒー
           </p>
-
-          {/* ダブルCTA（主従明確） */}
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <Link href="/quiz/intro" className="group">
-              <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500 to-amber-400 text-white px-6 py-3 text-base font-medium shadow-[0_6px_24px_rgba(255,105,180,0.25)] transition-transform group-hover:scale-[1.02] active:scale-[.99]">
-                診断をはじめる
-              </span>
-            </Link>
-            <Link href="/menu" className="group">
-              <span className="inline-flex items-center rounded-full border px-6 py-3 text-base font-medium backdrop-blur-sm transition-colors hover:bg-muted/50">
-                メニューを見る
-              </span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 2大CTAカード：ガラス調で統一 */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-3xl mx-auto">
-        <Link href="/quiz/intro" className="group">
-          <div className="relative overflow-hidden rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md">
-            <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full blur-3xl opacity-30 bg-gradient-to-tr from-pink-300 via-rose-300 to-amber-300 group-hover:opacity-40" />
-            <div className="flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow">
-                <Coffee className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold leading-tight">MBTI診断へ</h2>
-                <p className="text-sm text-muted-foreground truncate">あなたに合う一杯を1分で。</p>
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        <Link href="/menu" className="group">
-          <div className="relative overflow-hidden rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm ring-1 ring-black/5 transition-all hover:shadow-md">
-            <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full blur-3xl opacity-25 bg-gradient-to-tr from-amber-200 via-orange-200 to-yellow-200 group-hover:opacity-35" />
-            <div className="flex items-center gap-3">
-              <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl border">
-                <Utensils className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold leading-tight">Menu</h2>
-                <p className="text-sm text-muted-foreground truncate">豆のラインナップを見る。</p>
-              </div>
-            </div>
-          </div>
-        </Link>
-      </section>
-
-      {/* 情報ブロック：上品に */}
-      <section className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl">
-        <div className="rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <MapPin className="h-4 w-4" /> 開催場所
-          </h3>
-          <p className="text-sm text-muted-foreground">慶應義塾大学 三田キャンパス 第一校舎 133教室</p>
-        </div>
-        <div className="rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <Clock className="h-4 w-4" /> 開催時間
-          </h3>
-          <p className="text-sm text-muted-foreground">10:00–18:00（予定）</p>
-        </div>
-        <div className="rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm">
-          <h3 className="text-sm font-semibold mb-2">コンセプト</h3>
-          <p className="text-sm text-muted-foreground leading-6">
-            日常を彩る、<span className="bg-gradient-to-r from-rose-400 to-amber-500 bg-clip-text text-transparent">一杯のコーヒー</span>。
-            ふとした瞬間に寄り添う香りと温度を、あなたへ。
+          
+          {/* サブタイトル */}
+          <p className="text-base md:text-lg text-gray-600 font-light tracking-wide">
+            雑踏の中に、安らぎを
           </p>
         </div>
+
+        {/* ダブルCTA */}
+        <div className="mt-8 flex items-center justify-center gap-4">
+          <Link href="/quiz/intro" className="group">
+            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white px-8 py-4 text-lg font-medium shadow-[0_8px_30px_rgba(255,105,180,0.3)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_12px_40px_rgba(255,105,180,0.4)] active:scale-[.98]">
+              診断をはじめる
+            </span>
+          </Link>
+          <Link href="/menu" className="group">
+            <span className="inline-flex items-center rounded-full border-2 border-gray-300 bg-white/80 backdrop-blur-sm px-8 py-4 text-lg font-medium transition-all duration-300 hover:bg-white hover:border-gray-400 hover:shadow-md active:scale-[.98]">
+              メニューを見る
+            </span>
+          </Link>
+        </div>
       </section>
 
-      {/* Intro：最初だけ演出 */}
+      {/* 📍 開催情報カード（大きく目立つように） */}
+      <section className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        {/* 開催場所 */}
+        <div className="relative overflow-hidden rounded-2xl border border-pink-200/40 bg-white/80 backdrop-blur-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full blur-2xl opacity-20 bg-gradient-to-tr from-pink-400 to-rose-400" />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 text-white shadow-md">
+                <MapPin className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">開催場所</h3>
+            </div>
+            <p className="text-base text-gray-700 leading-relaxed">
+              慶應義塾大学 三田キャンパス<br />
+              第一校舎 133教室
+            </p>
+          </div>
+        </div>
+
+        {/* 開催時間 */}
+        <div className="relative overflow-hidden rounded-2xl border border-amber-200/40 bg-white/80 backdrop-blur-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+          <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full blur-2xl opacity-20 bg-gradient-to-tr from-amber-400 to-orange-400" />
+          <div className="relative">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-md">
+                <Clock className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">開催時間</h3>
+            </div>
+            <p className="text-base text-gray-700 leading-relaxed">
+              10:00 – 18:00<br />
+              <span className="text-sm text-gray-600">（予定）</span>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Intro演出（初回のみ） */}
       <IntroOverlay />
     </main>
   );
