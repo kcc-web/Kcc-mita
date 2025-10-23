@@ -11,9 +11,17 @@ import dropAnim   from "@/animations/drop-oil.json";
 import waveAnim   from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
 
-type Phase = "start" | "drop" | "wave" | "coffee" | "fade";
+type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
 
-const TIMINGS = { start: 800, drop: 1800, wave: 2000, coffee: 3000, fade: 600 } as const;
+// ✨ タイミング調整: wave延長、coffee余韻追加
+const TIMINGS = { 
+  start: 800,   // 初期待機
+  drop: 1800,   // ドロップアニメーション
+  wave: 2500,   // 波（延長: 2000→3200でゆっくり）
+  coffee: 3500, // コーヒー表示時間（延長: 3000→3500）
+  linger: 1200, // 余韻（新規追加: coffeeが表示されたまま少し待つ）
+  fade: 1000    // フェードアウト（延長: 600→1000でゆっくり）
+} as const;
 
 export default function IntroOverlay() {
   const [phase, setPhase] = useState<Phase>("start");
@@ -36,7 +44,7 @@ export default function IntroOverlay() {
         t = setTimeout(() => setPhase("drop"), TIMINGS.start);
         break;
       case "drop":
-        dropRef.current?.animationItem?.setSpeed?.(2);
+        dropRef.current?.animationItem?.setSpeed?.(1.8); // 少し遅く（2→1.8）
         t = setTimeout(() => setPhase("wave"), TIMINGS.drop);
         break;
       case "wave":
@@ -44,9 +52,15 @@ export default function IntroOverlay() {
         t = setTimeout(() => setPhase("coffee"), TIMINGS.wave);
         break;
       case "coffee":
-        t = setTimeout(() => setPhase("fade"), TIMINGS.coffee);
+        // coffeeアニメーション開始
+        t = setTimeout(() => setPhase("linger"), TIMINGS.coffee);
+        break;
+      case "linger":
+        // 余韻: coffeeが表示されたまま少し待つ
+        t = setTimeout(() => setPhase("fade"), TIMINGS.linger);
         break;
       case "fade":
+        // フェードアウト開始
         t = setTimeout(() => setShow(false), TIMINGS.fade);
         break;
     }
@@ -55,12 +69,16 @@ export default function IntroOverlay() {
 
   useEffect(() => {
     if (!show) return;
-    const killer = setTimeout(() => setShow(false), 8000);
+    // 全体の最大時間（自動終了）
+    const totalTime = Object.values(TIMINGS).reduce((a, b) => a + b, 0);
+    const killer = setTimeout(() => setShow(false), totalTime + 500);
     return () => clearTimeout(killer);
   }, [show]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" || e.key === " ") setShow(false); };
+    const onKey = (e: KeyboardEvent) => { 
+      if (e.key === "Escape" || e.key === " ") setShow(false); 
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -72,19 +90,39 @@ export default function IntroOverlay() {
       <motion.div
         key="intro"
         initial={{ opacity: 1 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: phase === "fade" ? 0 : 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.6 }}
-        className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden bg-white"
+        transition={{ duration: TIMINGS.fade / 1000 }} // ゆっくりフェード
+        className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
+        style={{
+          background: phase === "coffee" || phase === "linger"
+            ? "linear-gradient(135deg, #faf8f5 0%, #f5f1eb 50%, #faf8f5 100%)"
+            : "#ffffff"
+        }}
         onClick={() => setShow(false)}
       >
-        {/* うっすらノイズ */}
-        <div
-          className="absolute inset-0 opacity-[0.02] pointer-events-none"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          }}
-        />
+        {/* カフェ風のテクスチャ（coffeeフェーズのみ） */}
+        {(phase === "coffee" || phase === "linger") && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.04 }}
+            transition={{ duration: 1.2 }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+        )}
+
+        {/* 通常のノイズ（drop/waveフェーズ用） */}
+        {phase !== "coffee" && phase !== "linger" && (
+          <div
+            className="absolute inset-0 opacity-[0.02] pointer-events-none"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+            }}
+          />
+        )}
 
         {/* スキップヒント */}
         <motion.div
@@ -99,7 +137,13 @@ export default function IntroOverlay() {
         {/* 本体 */}
         <div className="relative w-full h-full flex items-center justify-center">
           {phase === "drop" && (
-            <div className="absolute inset-0 flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="absolute inset-0 flex items-center justify-center"
+            >
               <Lottie
                 lottieRef={dropRef}
                 animationData={dropAnim as object}
@@ -108,10 +152,17 @@ export default function IntroOverlay() {
                 style={{ width: "100vw", height: "100vh", transform: "scale(1.5)" }}
                 rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
               />
-            </div>
+            </motion.div>
           )}
+          
           {phase === "wave" && (
-            <div className="absolute flex items-center justify-center">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
+              className="absolute flex items-center justify-center"
+            >
               <div style={{ width: 500, height: 500 }}>
                 <Lottie
                   lottieRef={waveRef}
@@ -122,46 +173,106 @@ export default function IntroOverlay() {
                   rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
                 />
               </div>
-            </div>
+            </motion.div>
           )}
-          {phase === "coffee" && (
+          
+          {(phase === "coffee" || phase === "linger") && (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.6 }}
-              className="flex flex-col items-center"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
             >
-              <Lottie
-                lottieRef={coffeeRef}
-                animationData={coffeeAnim as object}
-                loop={false}
-                autoplay
-                style={{ width: 300, height: 300 }}
-                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-              />
+              {/* コーヒーアニメーション */}
               <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-                className="mt-4 text-center"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.9, ease: "easeOut" }}
               >
-                <p className="text-gray-900 text-base md:text-lg font-medium tracking-wide">
-                  Keio Coffee Club
-                </p>
-                <p className="text-gray-600 text-sm mt-1">日常を彩る、一杯のコーヒー</p>
+                <Lottie
+                  lottieRef={coffeeRef}
+                  animationData={coffeeAnim as object}
+                  loop={false}
+                  autoplay
+                  style={{ width: 320, height: 320 }}
+                  rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
+                />
+              </motion.div>
+
+              {/* メインコピー（全面的に） */}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.9, ease: "easeOut" }}
+                className="mt-6 text-center space-y-4"
+              >
+                {/* ブランド名 */}
+                <motion.div
+                  initial={{ letterSpacing: "0.05em", opacity: 0 }}
+                  animate={{ letterSpacing: "0.15em", opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.8 }}
+                >
+                  <h1 className="text-xl md:text-2xl font-light tracking-[0.15em] text-gray-800">
+                    KEIO COFFEE CLUB
+                  </h1>
+                </motion.div>
+
+                {/* 装飾ライン */}
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.9, duration: 0.6, ease: "easeInOut" }}
+                  className="flex items-center justify-center gap-3"
+                >
+                  <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                  <div className="h-px w-12 bg-gradient-to-l from-transparent via-gray-400 to-gray-400" />
+                </motion.div>
+
+                {/* キャッチコピー（大きく全面的に） */}
+                <motion.div
+                  initial={{ y: 15, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1.1, duration: 0.9, ease: "easeOut" }}
+                  className="space-y-2"
+                >
+                  <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-900 leading-relaxed">
+                    日常を彩る、
+                  </p>
+                  <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-900 leading-relaxed">
+                    一杯のコーヒー
+                  </p>
+                </motion.div>
+
+                {/* サブテキスト（カフェ風） */}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1.4, duration: 0.8 }}
+                  className="text-sm md:text-base text-gray-600 font-light tracking-wide mt-4"
+                >
+                  A Cup of Coffee, A Moment of Joy
+                </motion.p>
               </motion.div>
             </motion.div>
           )}
         </div>
 
-        {/* 進捗ドット */}
+        {/* 進捗ドット（lingerフェーズを追加） */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {(["start","drop","wave","coffee"] as Phase[]).map((p) => (
-            <div
+          {(["start","drop","wave","coffee","linger"] as Phase[]).map((p) => (
+            <motion.div
               key={p}
-              className={`h-1 rounded-full ${p === phase ? "bg-black/60" : "bg-black/15"}`}
+              className={`h-1 rounded-full transition-all ${
+                p === phase ? "bg-black/60" : "bg-black/15"
+              }`}
               style={{ width: p === phase ? 40 : 24 }}
+              animate={{
+                width: p === phase ? 40 : 24,
+                backgroundColor: p === phase ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.15)",
+              }}
+              transition={{ duration: 0.3 }}
             />
           ))}
         </div>

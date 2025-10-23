@@ -95,13 +95,13 @@ export default function Home() {
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
             <MapPin className="h-4 w-4" /> 開催場所
           </h3>
-          <p className="text-sm text-muted-foreground">慶應義塾大学 三田キャンパス</p>
+          <p className="text-sm text-muted-foreground">慶應義塾大学 三田キャンパス 第一校舎 133教室</p>
         </div>
         <div className="rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
             <Clock className="h-4 w-4" /> 開催時間
           </h3>
-          <p className="text-sm text-muted-foreground">10:00–17:00（予定）</p>
+          <p className="text-sm text-muted-foreground">10:00–18:00（予定）</p>
         </div>
         <div className="rounded-2xl border bg-background/60 backdrop-blur-xl p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-2">コンセプト</h3>
