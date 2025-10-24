@@ -10,5 +10,13 @@ export type Bean = {
   key?: string;
   process?: string;
   tags?: string[];
+  description?: string; // カードに表示する説明文
+  
+  // MenuBean用の追加プロパティ
+  category?: "normal" | "special";
+  roaster?: string;
+  roastLevel?: string;
+  price?: string;
+  stock?: "available" | "limited" | "soldout";
 };
 
