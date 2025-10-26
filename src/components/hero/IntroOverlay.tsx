@@ -209,14 +209,14 @@ export default function IntroOverlay() {
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.9, ease: "easeOut" }}
+                transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
                 className="mt-6 text-center space-y-4"
               >
                 {/* ブランド名 */}
                 <motion.div
                   initial={{ letterSpacing: "0.05em", opacity: 0 }}
                   animate={{ letterSpacing: "0.15em", opacity: 1 }}
-                  transition={{ delay: 0.7, duration: 0.8 }}
+                  transition={{ delay: 0.3, duration: 0.7 }}
                 >
                   <h1 className="text-xl md:text-2xl font-light tracking-[0.15em] text-gray-800">
                     KEIO COFFEE CLUB
@@ -227,7 +227,7 @@ export default function IntroOverlay() {
                 <motion.div
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.9, duration: 0.6, ease: "easeInOut" }}
+                  transition={{ delay: 0.5, duration: 0.5, ease: "easeInOut" }}
                   className="flex items-center justify-center gap-3"
                 >
                   <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
@@ -239,8 +239,8 @@ export default function IntroOverlay() {
                 <motion.div
                   initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1.1, duration: 0.9, ease: "easeOut" }}
-                  className="space-y-2"
+                  transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
+                  className="space-y-2 pt-2"
                 >
                   <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-900 leading-relaxed">
                     日常を彩る、
@@ -254,7 +254,7 @@ export default function IntroOverlay() {
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 1.4, duration: 0.8 }}
+                  transition={{ delay: 1.0, duration: 0.7 }}
                   className="text-sm md:text-base text-gray-600 font-light tracking-wide mt-4"
                 >
                   A Cup of Coffee, A Moment of Joy
