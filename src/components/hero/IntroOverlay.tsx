@@ -181,19 +181,19 @@ export default function IntroOverlay() {
           
           {(phase === "coffee" || phase === "linger") && (
             <motion.div
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    // ❶ exitにtransitionを移す（ここにduration/easeを書く）
-    exit={{ opacity: 0, scale: 0.98, transition: { duration: 1.5, ease: [0.43, 0.13, 0.23, 0.96] } }}
-    // ❷ transitionからexitキーを削除
-    transition={{ duration: 0.8, ease: "easeOut" }}
-    className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
-  >
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98, transition: { duration: 1.5, ease: [0.43, 0.13, 0.23, 0.96] } }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
+              style={{ willChange: "transform, opacity" }}
+            >
               {/* コーヒーアニメーション */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.9, ease: "easeOut" }}
+                style={{ willChange: "transform, opacity" }}
               >
                 <Lottie
                   lottieRef={coffeeRef}
@@ -211,24 +211,27 @@ export default function IntroOverlay() {
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
                 className="mt-6 text-center space-y-4"
+                style={{ willChange: "transform, opacity" }}
               >
                 {/* ブランド名 */}
                 <motion.div
-                  initial={{ letterSpacing: "0.05em", opacity: 0 }}
-                  animate={{ letterSpacing: "0.15em", opacity: 1 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   transition={{ delay: 0.3, duration: 0.7 }}
+                  style={{ willChange: "opacity" }}
                 >
-                  <h1 className="text-xl md:text-2xl font-light tracking-[0.15em] text-gray-800">
+                  <h1 className="text-xl md:text-2xl font-light text-gray-800" style={{ letterSpacing: "0.15em" }}>
                     KEIO COFFEE CLUB
                   </h1>
                 </motion.div>
 
                 {/* 装飾ライン */}
                 <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5, ease: "easeInOut" }}
+                  initial={{ scaleX: 0, opacity: 0 }}
+                  animate={{ scaleX: 1, opacity: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                   className="flex items-center justify-center gap-3"
+                  style={{ willChange: "transform, opacity" }}
                 >
                   <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
@@ -239,8 +242,9 @@ export default function IntroOverlay() {
                 <motion.div
                   initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.7, duration: 0.8, ease: "easeOut" }}
+                  transition={{ delay: 0.7, duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
                   className="space-y-2 pt-2"
+                  style={{ willChange: "transform, opacity" }}
                 >
                   <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-900 leading-relaxed">
                     日常を彩る、
@@ -256,6 +260,7 @@ export default function IntroOverlay() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.0, duration: 0.7 }}
                   className="text-sm md:text-base text-gray-600 font-light tracking-wide mt-4"
+                  style={{ willChange: "opacity" }}
                 >
                   A Cup of Coffee, A Moment of Joy
                 </motion.p>
