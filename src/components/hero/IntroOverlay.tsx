@@ -13,63 +13,68 @@ import coffeeAnim from "@/animations/coffee.json";
 
 type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
 
-// ✨ タイミング調整: wave延長、coffee余韻追加、フェードアウト延長
 const TIMINGS = { 
-  start: 800,   // 初期待機
-  drop: 1800,   // ドロップアニメーション
-  wave: 2500,   // 波（延長: 2000→3200でゆっくり）
-  coffee: 3500, // コーヒー表示時間（延長: 3000→3500）
-  linger: 1500, // 余韻（延長: 1200→1500でさらにゆっくり）
-  fade: 1800    // フェードアウト（延長: 1000→1800でじっくり消える）
+  start: 800,
+  drop: 1800,
+  wave: 2500,
+  coffee: 3500,
+  linger: 1500,
+  fade: 1800
 } as const;
 
 export default function IntroOverlay() {
   const [phase, setPhase] = useState<Phase>("start");
-  const [show, setShow]   = useState(true);
+  const [show, setShow] = useState(true);
 
-  const dropRef   = useRef<LottieRefCurrentProps>(null);
-  const waveRef   = useRef<LottieRefCurrentProps>(null);
+  const dropRef = useRef<LottieRefCurrentProps>(null);
+  const waveRef = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setShow(false);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setShow(false);
+    }
   }, []);
 
   useEffect(() => {
     if (!show) return;
     let t: ReturnType<typeof setTimeout> | null = null;
+    
     switch (phase) {
       case "start":
         t = setTimeout(() => setPhase("drop"), TIMINGS.start);
         break;
       case "drop":
-        dropRef.current?.animationItem?.setSpeed?.(1.8); // 少し遅く（2→1.8）
+        if (dropRef.current?.animationItem?.setSpeed) {
+          dropRef.current.animationItem.setSpeed(1.8);
+        }
         t = setTimeout(() => setPhase("wave"), TIMINGS.drop);
         break;
       case "wave":
-        waveRef.current?.play?.();
+        if (waveRef.current?.play) {
+          waveRef.current.play();
+        }
         t = setTimeout(() => setPhase("coffee"), TIMINGS.wave);
         break;
       case "coffee":
-        // coffeeアニメーション開始
         t = setTimeout(() => setPhase("linger"), TIMINGS.coffee);
         break;
       case "linger":
-        // 余韻: coffeeが表示されたまま少し待つ
         t = setTimeout(() => setPhase("fade"), TIMINGS.linger);
         break;
       case "fade":
-        // フェードアウト開始
         t = setTimeout(() => setShow(false), TIMINGS.fade);
         break;
     }
-    return () => { if (t) clearTimeout(t); };
+    
+    return () => {
+      if (t) clearTimeout(t);
+    };
   }, [phase, show]);
 
   useEffect(() => {
     if (!show) return;
-    // 全体の最大時間（自動終了）
     const totalTime = Object.values(TIMINGS).reduce((a, b) => a + b, 0);
     const killer = setTimeout(() => setShow(false), totalTime + 500);
     return () => clearTimeout(killer);
@@ -77,7 +82,9 @@ export default function IntroOverlay() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { 
-      if (e.key === "Escape" || e.key === " ") setShow(false); 
+      if (e.key === "Escape" || e.key === " ") {
+        setShow(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -85,16 +92,19 @@ export default function IntroOverlay() {
 
   if (!show) return null;
 
+  // ★ B案：ここで fade 状態を boolean 化（以降のナローイング影響を受けない）
+  const isFade = phase === "fade";
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
         key="intro"
         initial={{ opacity: 1 }}
-        animate={{ opacity: phase === "fade" ? 0 : 1 }}
+        animate={{ opacity: isFade ? 0 : 1 }}
         exit={{ opacity: 0 }}
         transition={{ 
           duration: TIMINGS.fade / 1000,
-          ease: [0.43, 0.13, 0.23, 0.96] // カスタムイージング: ゆっくり始まり、ゆっくり終わる
+          ease: [0.43, 0.13, 0.23, 0.96]
         }}
         className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
         style={{
@@ -104,7 +114,7 @@ export default function IntroOverlay() {
         }}
         onClick={() => setShow(false)}
       >
-        {/* カフェ風のテクスチャ（coffeeフェーズのみ） */}
+        {/* テクスチャ（coffee / linger） */}
         {(phase === "coffee" || phase === "linger") && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -117,7 +127,7 @@ export default function IntroOverlay() {
           />
         )}
 
-        {/* 通常のノイズ（drop/waveフェーズ用） */}
+        {/* テクスチャ（それ以外） */}
         {phase !== "coffee" && phase !== "linger" && (
           <div
             className="absolute inset-0 opacity-[0.02] pointer-events-none"
@@ -137,7 +147,7 @@ export default function IntroOverlay() {
           <p className="text-black/40 text-xs tracking-wider">SKIP (ESC)</p>
         </motion.div>
 
-        {/* 本体 */}
+        {/* アニメーション本体 */}
         <div className="relative w-full h-full flex items-center justify-center">
           {phase === "drop" && (
             <motion.div
@@ -149,7 +159,7 @@ export default function IntroOverlay() {
             >
               <Lottie
                 lottieRef={dropRef}
-                animationData={dropAnim as object}
+                animationData={dropAnim}
                 loop={false}
                 autoplay
                 style={{ width: "100vw", height: "100vh", transform: "scale(1.5)" }}
@@ -169,7 +179,7 @@ export default function IntroOverlay() {
               <div style={{ width: 500, height: 500 }}>
                 <Lottie
                   lottieRef={waveRef}
-                  animationData={waveAnim as object}
+                  animationData={waveAnim}
                   loop={false}
                   autoplay
                   style={{ width: "100%", height: "100%" }}
@@ -183,8 +193,12 @@ export default function IntroOverlay() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98, transition: { duration: 1.5, ease: [0.43, 0.13, 0.23, 0.96] } }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ 
+                // ★ ここを isFade に置換（ナローイング由来の ts(2367) を回避）
+                duration: isFade ? 1.5 : 0.8,
+                ease: isFade ? [0.43, 0.13, 0.23, 0.96] : "easeOut"
+              }}
               className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
               style={{ willChange: "transform, opacity" }}
             >
@@ -197,7 +211,7 @@ export default function IntroOverlay() {
               >
                 <Lottie
                   lottieRef={coffeeRef}
-                  animationData={coffeeAnim as object}
+                  animationData={coffeeAnim}
                   loop={false}
                   autoplay
                   style={{ width: 320, height: 320 }}
@@ -205,46 +219,39 @@ export default function IntroOverlay() {
                 />
               </motion.div>
 
-              {/* メインコピー（全面的に） */}
+              {/* テキスト群 */}
               <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.8 }}
                 className="mt-6 text-center space-y-4"
-                style={{ willChange: "transform, opacity" }}
+                style={{ willChange: "opacity" }}
               >
-                {/* ブランド名 */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3, duration: 0.7 }}
-                  style={{ willChange: "opacity" }}
+                <h1 
+                  className="text-xl md:text-2xl font-light text-gray-800"
+                  style={{ letterSpacing: "0.15em" }}
                 >
-                  <h1 className="text-xl md:text-2xl font-light text-gray-800" style={{ letterSpacing: "0.15em" }}>
-                    KEIO COFFEE CLUB
-                  </h1>
-                </motion.div>
+                  KEIO COFFEE CLUB
+                </h1>
 
-                {/* 装飾ライン */}
                 <motion.div
-                  initial={{ scaleX: 0, opacity: 0 }}
-                  animate={{ scaleX: 1, opacity: 1 }}
-                  transition={{ delay: 0.5, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.5, duration: 0.5 }}
                   className="flex items-center justify-center gap-3"
-                  style={{ willChange: "transform, opacity" }}
+                  style={{ willChange: "transform" }}
                 >
                   <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
                   <div className="h-px w-12 bg-gradient-to-l from-transparent via-gray-400 to-gray-400" />
                 </motion.div>
 
-                {/* キャッチコピー（大きく全面的に） */}
                 <motion.div
-                  initial={{ y: 15, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.7, duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7, duration: 0.8 }}
                   className="space-y-2 pt-2"
-                  style={{ willChange: "transform, opacity" }}
+                  style={{ willChange: "opacity" }}
                 >
                   <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-900 leading-relaxed">
                     日常を彩る、
@@ -254,7 +261,6 @@ export default function IntroOverlay() {
                   </p>
                 </motion.div>
 
-                {/* サブテキスト（カフェ風） */}
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -269,7 +275,7 @@ export default function IntroOverlay() {
           )}
         </div>
 
-        {/* 進捗ドット（lingerフェーズを追加） */}
+        {/* 進捗ドット */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
           {(["start","drop","wave","coffee","linger"] as Phase[]).map((p) => (
             <motion.div
@@ -290,4 +296,5 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
+
 
