@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { QUESTIONS } from "@/lib/quiz";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,15 @@ export default function QuizClient() {
   const [answers, setAnswers] = useState<number[]>(() =>
     Array<number>(total).fill(undefined as unknown as number)
   );
+
+  // 診断開始時（初回レンダリング時）に前回のハイライト情報をクリア
+  useEffect(() => {
+    try {
+      localStorage.removeItem("kcc-quiz-highlighted-bean");
+    } catch {
+      // localStorageが使えない環境では無視
+    }
+  }, []);
 
   const q = QUESTIONS[index];
   const asAny = q as Partial <{
@@ -98,4 +107,3 @@ export default function QuizClient() {
     </main>
   );
 }
-

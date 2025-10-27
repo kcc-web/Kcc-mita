@@ -65,12 +65,24 @@ function resolveImage(beanId: string | undefined, fallbackImage: string): string
 
 export default function ResultClient({ initial }: { initial: Initial }) {
   const [scores, setScores] = useState<Scores>(() => ensureScores(initial));
+  
   useEffect(() => {
     setScores(ensureScores(initial));
   }, [initial.score, initial.type]);
 
   const picked = useMemo(() => pickBeanType(scores), [scores]);
   const photoSrc = resolveImage(picked.beanId, picked.fallbackImage);
+
+  // 診断結果の豆IDをlocalStorageに保存（次回診断まで維持）
+  useEffect(() => {
+    if (picked?.beanId) {
+      try {
+        localStorage.setItem("kcc-quiz-highlighted-bean", picked.beanId);
+      } catch {
+        // localStorageが使えない環境では無視
+      }
+    }
+  }, [picked?.beanId]);
 
   return (
     <main className="container mx-auto max-w-4xl px-4 py-12">
@@ -111,65 +123,48 @@ export default function ResultClient({ initial }: { initial: Initial }) {
         </div>
       </section>
 
-      {/* 🔘 おすすめのコーヒー（クリック可能カード） */}
+      {/* 🔘 おすすめのコーヒー（メニューへ案内） */}
       <section className="mb-10">
         <div className="flex items-center gap-2 mb-4">
           <Coffee className="h-5 w-5 text-pink-600" />
           <h2 className="text-2xl font-bold">あなたにおすすめのコーヒー</h2>
         </div>
 
-        <Link href={`/menu?bean=${picked.beanId}`}>
-          <div className="group rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-white to-pink-50/30 p-6 shadow-md hover:shadow-xl hover:border-pink-300 transition-all cursor-pointer">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2 group-hover:text-pink-600 transition-colors">
-                  {picked.beanName}
-                </h3>
-                <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-3">
-                  {picked.desc}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  {picked.roast && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
-                      {picked.roast}
-                    </span>
-                  )}
-                  {picked.price && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium">
-                      {picked.price}
-                    </span>
-                  )}
-                  {picked.tags.map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex-shrink-0 text-pink-500 group-hover:translate-x-1 transition-transform">
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
+        <div className="rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-white to-pink-50/30 p-6 shadow-md">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">
+                {picked.beanName}
+              </h3>
+              <p className="text-sm md:text-base text-gray-600 leading-relaxed mb-3">
+                {picked.desc}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {picked.roast && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
+                    {picked.roast}
+                  </span>
+                )}
+                {picked.price && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium">
+                    {picked.price}
+                  </span>
+                )}
+                {picked.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
+                  >
+                    {t}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
-        </Link>
+        </div>
 
-        <p className="text-xs text-gray-500 mt-2 text-center">
-          ↑ クリックしてメニューで詳細を見る
+        <p className="text-sm text-gray-600 mt-3 text-center">
+          メニューページで、この豆がハイライト表示されます
         </p>
       </section>
 

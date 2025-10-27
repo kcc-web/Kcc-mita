@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export default function MenuClient() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<MenuBean | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
+  const highlightRef = useRef<HTMLDivElement | null>(null);
 
   const sp = useSearchParams();
   const router = useRouter();
@@ -35,38 +36,60 @@ export default function MenuClient() {
   const lightRoast = normalBeans.find((b) => (b.roaster || "").toLowerCase() === "mirai seeds");
   const darkRoast = normalBeans.find((b) => (b.roaster || "").toLowerCase() === "papelburg");
 
-  // URLクエリ (?bean=) で指定があればダイアログを開く
+  // URLクエリ (?bean=) で指定があればハイライト、なければlocalStorageから読み取り
   useEffect(() => {
-    if (!beanParam) return;
+    let targetBeanId = beanParam;
+    
+    // URLパラメータがない場合、localStorageから読み取り
+    if (!targetBeanId) {
+      try {
+        const stored = localStorage.getItem("kcc-quiz-highlighted-bean");
+        if (stored) {
+          targetBeanId = stored.toLowerCase().trim();
+        }
+      } catch {
+        // localStorageが使えない環境では無視
+      }
+    }
+    
+    if (!targetBeanId) {
+      setHighlight(null);
+      return;
+    }
     const all = [...normalBeans, ...specialBeans];
     const match = all.find(
       (b) =>
-        (b.key && b.key.toLowerCase() === beanParam) ||
-        (b.id && b.id.toString().toLowerCase() === beanParam) ||
-        (b.name && b.name.toLowerCase().includes(beanParam))
+        (b.key && b.key.toLowerCase() === targetBeanId) ||
+        (b.id && b.id.toString().toLowerCase() === targetBeanId) ||
+        (b.name && b.name.toLowerCase().includes(targetBeanId))
     );
     if (match) {
-      setActive(match);
-      setHighlight(match.key ?? match.id.toString());
-      const t = setTimeout(() => setOpen(true), 300);
-      return () => clearTimeout(t);
+      const keyStr = match.key ?? match.id.toString();
+      setHighlight(keyStr);
+      
+      // スクロール（少し遅延させて確実に要素が描画されてから）
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({ 
+          behavior: "smooth", 
+          block: "center" 
+        });
+      }, 300);
     }
   }, [beanParam, normalBeans, specialBeans]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
-      router.push("/menu", { scroll: false });
-      setTimeout(() => {
-        setHighlight(null);
-        setActive(null);
-      }, 300);
+      setActive(null);
     }
   };
 
   // 共通カード（16:9／幅280px）
   const UniformCard = ({ bean }: { bean: MenuBean }) => (
-    <div className={`flex-shrink-0 ${CARD_W} snap-center`}>
+    <div 
+      className={`flex-shrink-0 ${CARD_W} snap-center`}
+      ref={highlight === (bean.key ?? bean.id.toString()) ? highlightRef : null}
+    >
       {renderBeanCard(bean)}
     </div>
   );
@@ -77,47 +100,54 @@ export default function MenuClient() {
     const isHL = highlight === keyStr;
 
     return (
-      <KccCard
-        key={b.id}
-        title={b.name}
-        description={b.description ?? ""}
-        image={{ src: b.photo, alt: b.name, ratio: "16/9" }}
-        className={
-          isHL
-            ? "ring-2 ring-pink-500 shadow-lg animate-[pulse_1.6s_ease-in-out_2]"
+      <div 
+        className={`transition-all duration-700 ${
+          isHL 
+            ? "" 
             : ""
-        }
-        onClick={() => {
-          setActive(b);
-          setOpen(true);
-          setHighlight(keyStr);
-        }}
-        footer={
-          <div className="flex flex-wrap items-center gap-2">
-            {b.roaster && (
-              <KccTag>
-                <Coffee className="h-3 w-3 mr-1 inline" />
-                {b.roaster}
-              </KccTag>
-            )}
-            {b.roastLevel && <KccTag>{b.roastLevel}</KccTag>}
-            {b.price && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-xs font-semibold">
-                {b.price}
-              </span>
-            )}
-            {b.stock === "limited" && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
-                <Award className="h-3 w-3 mr-1" />
-                数量限定
-              </span>
-            )}
-            {b.flavor?.slice(0, 2).map((f) => (
-              <KccTag key={f}>{f}</KccTag>
-            ))}
-          </div>
-        }
-      />
+        }`}
+      >
+        <KccCard
+          key={b.id}
+          title={b.name}
+          description={b.description ?? ""}
+          image={{ src: b.photo, alt: b.name, ratio: "16/9" }}
+          className={
+            isHL
+              ? "shadow-[0_0_0_2px_rgba(251,207,232,0.4),0_8px_24px_-4px_rgba(244,114,182,0.15)]"
+              : ""
+          }
+          onClick={() => {
+            setActive(b);
+            setOpen(true);
+          }}
+          footer={
+            <div className="flex flex-wrap items-center gap-2">
+              {b.roaster && (
+                <KccTag>
+                  <Coffee className="h-3 w-3 mr-1 inline" />
+                  {b.roaster}
+                </KccTag>
+              )}
+              {b.roastLevel && <KccTag>{b.roastLevel}</KccTag>}
+              {b.price && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-xs font-semibold">
+                  {b.price}
+                </span>
+              )}
+              {b.stock === "limited" && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                  <Award className="h-3 w-3 mr-1" />
+                  数量限定
+                </span>
+              )}
+              {b.flavor?.slice(0, 2).map((f) => (
+                <KccTag key={f}>{f}</KccTag>
+              ))}
+            </div>
+          }
+        />
+      </div>
     );
   };
 
