@@ -60,8 +60,8 @@ export default function MenuClient() {
     }
   };
 
-  // カード生成関数
-  const renderBeanCard = (b: MenuBean, featured = false) => {
+  // カード生成関数（すべて16:9で統一）
+  const renderBeanCard = (b: MenuBean) => {
     const keyStr = b.key ?? b.id.toString();
     const isHL = highlight === keyStr;
 
@@ -70,7 +70,7 @@ export default function MenuClient() {
         key={b.id}
         title={b.name}
         description={b.description ?? ""}
-        image={{ src: b.photo, alt: b.name, ratio: featured ? "4/5" : "16/9" }}
+        image={{ src: b.photo, alt: b.name, ratio: "16/9" }}
         className={
           isHL
             ? "ring-2 ring-pink-500 shadow-lg animate-[pulse_1.6s_ease-in-out_2]"
@@ -179,13 +179,13 @@ export default function MenuClient() {
 
           {/* 2. 浅煎り - フィーチャードカード */}
           {lightRoast && (
-            <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-6 shadow-lg">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-4 shadow-lg">
               {/* 背景装飾 */}
               <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full blur-3xl opacity-20 bg-gradient-to-br from-yellow-400 to-orange-400" />
               
               <div className="relative">
                 {/* ラベル */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 shadow-sm">
                     <Sun className="h-4 w-4 text-amber-600" />
                     <span className="text-sm font-bold text-amber-900">浅煎り</span>
@@ -196,10 +196,10 @@ export default function MenuClient() {
                 </div>
 
                 {/* カード */}
-                {renderBeanCard(lightRoast, true)}
+                {renderBeanCard(lightRoast)}
                 
                 {/* 説明 */}
-                <div className="mt-4 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
+                <div className="mt-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                   <p className="text-xs text-amber-900 leading-relaxed">
                     <Award className="h-3 w-3 inline mr-1" />
                     トロピカルフルーツのような華やかな香りと、長く続く甘い余韻が特徴の特別な一杯。
@@ -211,13 +211,13 @@ export default function MenuClient() {
 
           {/* 3. 深煎り - フィーチャードカード */}
           {darkRoast && (
-            <div className="relative overflow-hidden rounded-2xl border-2 border-stone-300 bg-gradient-to-br from-stone-100 via-neutral-100 to-zinc-100 p-6 shadow-lg">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-stone-300 bg-gradient-to-br from-stone-100 via-neutral-100 to-zinc-100 p-4 shadow-lg">
               {/* 背景装飾 */}
               <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full blur-3xl opacity-15 bg-gradient-to-br from-stone-600 to-zinc-700" />
               
               <div className="relative">
                 {/* ラベル */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 shadow-sm">
                     <Flame className="h-4 w-4 text-stone-700" />
                     <span className="text-sm font-bold text-stone-900">深煎り</span>
@@ -228,10 +228,10 @@ export default function MenuClient() {
                 </div>
 
                 {/* カード */}
-                {renderBeanCard(darkRoast, true)}
+                {renderBeanCard(darkRoast)}
                 
                 {/* 説明 */}
-                <div className="mt-4 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
+                <div className="mt-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
                   <p className="text-xs text-stone-900 leading-relaxed">
                     <Coffee className="h-3 w-3 inline mr-1" />
                     カカオとカラメルの香ばしさ。力強いコクと安心感のある、KCCオリジナルブレンド。
