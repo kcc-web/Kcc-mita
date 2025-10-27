@@ -4,12 +4,19 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { getNormalBeans, getSpecialBeans, WAFFLE, type MenuBean } from "@/lib/menu";
+import {
+  getNormalBeans,
+  getSpecialBeans,
+  WAFFLE,
+  type MenuBean,
+} from "@/lib/menu";
 import KccCard from "@/components/kcc/KccCard";
 import { KccGrid } from "@/components/kcc/KccGrid";
 import { KccTag } from "@/components/kcc/KccTag";
 import BeanDialog from "@/components/menu/BeanDialog";
 import { Sparkles, Coffee, Award, Flame, Sun } from "lucide-react";
+
+const CARD_W = "w-[280px]";
 
 export default function MenuClient() {
   const [open, setOpen] = useState(false);
@@ -23,29 +30,26 @@ export default function MenuClient() {
   const normalBeans = getNormalBeans();
   const specialBeans = getSpecialBeans();
 
-  // PASSAGE COFFEEの3種を抽出
-  const passageBeans = normalBeans.filter((b) => b.roaster === "Passage");
-  
-  // 浅煎り（Mirai Seeds）と深煎り（Papelburg）を抽出
-  const lightRoast = normalBeans.find((b) => b.roaster === "Mirai Seeds");
-  const darkRoast = normalBeans.find((b) => b.roaster === "Papelburg");
+  // --- 抽出：PASSAGE 3種 / 浅煎り（Mirai Seeds） / 深煎り（Papelburg） ---
+  const passageBeans = normalBeans.filter((b) => (b.roaster || "").toLowerCase() === "passage");
+  const lightRoast = normalBeans.find((b) => (b.roaster || "").toLowerCase() === "mirai seeds");
+  const darkRoast = normalBeans.find((b) => (b.roaster || "").toLowerCase() === "papelburg");
 
+  // URLクエリ (?bean=) で指定があればダイアログを開く
   useEffect(() => {
     if (!beanParam) return;
-
-    const allBeans = [...normalBeans, ...specialBeans];
-    const match = allBeans.find(
+    const all = [...normalBeans, ...specialBeans];
+    const match = all.find(
       (b) =>
-        b.key?.toLowerCase() === beanParam ||
-        b.id?.toString().toLowerCase() === beanParam ||
-        b.name?.toLowerCase().includes(beanParam)
+        (b.key && b.key.toLowerCase() === beanParam) ||
+        (b.id && b.id.toString().toLowerCase() === beanParam) ||
+        (b.name && b.name.toLowerCase().includes(beanParam))
     );
-
     if (match) {
       setActive(match);
       setHighlight(match.key ?? match.id.toString());
-      const timer = setTimeout(() => setOpen(true), 300);
-      return () => clearTimeout(timer);
+      const t = setTimeout(() => setOpen(true), 300);
+      return () => clearTimeout(t);
     }
   }, [beanParam, normalBeans, specialBeans]);
 
@@ -60,9 +64,16 @@ export default function MenuClient() {
     }
   };
 
-  // カード生成関数（すべて16:9で統一）
+  // 共通カード（16:9／幅280px）
+  const UniformCard = ({ bean }: { bean: MenuBean }) => (
+    <div className={`flex-shrink-0 ${CARD_W} snap-center`}>
+      {renderBeanCard(bean)}
+    </div>
+  );
+
+  // 汎用カード（16:9）
   const renderBeanCard = (b: MenuBean) => {
-    const keyStr = b.key ?? b.id.toString();
+    const keyStr = b.key ?? b.id?.toString() ?? "";
     const isHL = highlight === keyStr;
 
     return (
@@ -79,6 +90,7 @@ export default function MenuClient() {
         onClick={() => {
           setActive(b);
           setOpen(true);
+          setHighlight(keyStr);
         }}
         footer={
           <div className="flex flex-wrap items-center gap-2">
@@ -100,7 +112,7 @@ export default function MenuClient() {
                 数量限定
               </span>
             )}
-            {b.flavor.slice(0, 2).map((f) => (
+            {b.flavor?.slice(0, 2).map((f) => (
               <KccTag key={f}>{f}</KccTag>
             ))}
           </div>
@@ -121,9 +133,7 @@ export default function MenuClient() {
 
       {/* 上部ボタン（PC） */}
       <div className="mb-6 hidden sm:flex items-center justify-between gap-3">
-        <span className="text-sm text-muted-foreground">
-          診断から選ぶこともできます
-        </span>
+        <span className="text-sm text-muted-foreground">診断から選ぶこともできます</span>
         <Button asChild variant="outline" size="sm">
           <Link href="/quiz/intro">
             <Sparkles className="h-4 w-4 mr-2" />
@@ -140,107 +150,85 @@ export default function MenuClient() {
           <span className="text-sm text-muted-foreground">通常ライン - 全て¥700</span>
         </div>
 
-        {/* === PC・タブレット：グリッド表示 === */}
+        {/* PC/タブレット：従来グリッド */}
         <div className="hidden md:block">
           <KccGrid>{normalBeans.map((b) => renderBeanCard(b))}</KccGrid>
         </div>
 
-        {/* === モバイル：セクション別レイアウト === */}
+        {/* モバイル：PASSAGE横スク → 浅/深を同サイズカードで表示 */}
         <div className="md:hidden space-y-8">
-          
-          {/* 1. PASSAGE COFFEE - 横スクロール */}
-          <div>
-            <div className="flex items-center gap-2 mb-3 px-1">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-100 to-orange-100 border border-pink-200">
-                <Coffee className="h-4 w-4 text-pink-600" />
-                <span className="text-sm font-bold text-pink-900">PASSAGE COFFEE</span>
-                <span className="text-xs text-pink-700 bg-white/80 px-2 py-0.5 rounded-full">3種</span>
+          {/* 1) PASSAGE（横スクロール、カード幅統一） */}
+          {passageBeans.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-pink-100 to-orange-100 border border-pink-200">
+                  <Coffee className="h-4 w-4 text-pink-600" />
+                  <span className="text-sm font-bold text-pink-900">PASSAGE COFFEE</span>
+                  <span className="text-xs text-pink-700 bg-white/80 px-2 py-0.5 rounded-full">
+                    {passageBeans.length}種
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            {/* 横スクロールコンテナ */}
-            <div className="relative -mx-4 px-4">
-              <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide">
-                {passageBeans.map((b) => (
-                  <div key={b.id} className="flex-shrink-0 w-[280px] snap-center">
-                    {renderBeanCard(b)}
-                  </div>
-                ))}
-              </div>
-              
-              {/* スクロールヒント */}
-              <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
-            </div>
-            
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              ← スワイプして比較 →
-            </p>
-          </div>
 
-          {/* 2. 浅煎り - フィーチャードカード */}
+              <div className="relative -mx-4 px-4">
+                <div
+                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  {passageBeans.map((b) => (
+                    <UniformCard key={b.id} bean={b} />
+                  ))}
+                </div>
+                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+              </div>
+
+              <p className="text-xs text-center text-muted-foreground mt-2">
+                ← スワイプして比較 →
+              </p>
+            </div>
+          )}
+
+          {/* 2) 浅煎り（同サイズカード） */}
           {lightRoast && (
-            <div className="relative overflow-hidden rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 p-4 shadow-lg">
-              {/* 背景装飾 */}
-              <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full blur-3xl opacity-20 bg-gradient-to-br from-yellow-400 to-orange-400" />
-              
-              <div className="relative">
-                {/* ラベル */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 shadow-sm">
-                    <Sun className="h-4 w-4 text-amber-600" />
-                    <span className="text-sm font-bold text-amber-900">浅煎り</span>
-                  </div>
-                  <span className="text-xs font-medium text-amber-800 bg-white/80 px-3 py-1 rounded-full">
-                    Fruity & Bright
-                  </span>
+            <div>
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200">
+                  <Sun className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-bold text-amber-900">浅煎り</span>
                 </div>
-
-                {/* カード */}
-                {renderBeanCard(lightRoast)}
-                
-                {/* 説明 */}
-                <div className="mt-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    <Award className="h-3 w-3 inline mr-1" />
-                    トロピカルフルーツのような華やかな香りと、長く続く甘い余韻が特徴の特別な一杯。
-                  </p>
+              </div>
+              <div className="relative -mx-4 px-4">
+                <div
+                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  <UniformCard bean={lightRoast} />
                 </div>
+                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
               </div>
             </div>
           )}
 
-          {/* 3. 深煎り - フィーチャードカード */}
+          {/* 3) 深煎り（同サイズカード） */}
           {darkRoast && (
-            <div className="relative overflow-hidden rounded-2xl border-2 border-stone-300 bg-gradient-to-br from-stone-100 via-neutral-100 to-zinc-100 p-4 shadow-lg">
-              {/* 背景装飾 */}
-              <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full blur-3xl opacity-15 bg-gradient-to-br from-stone-600 to-zinc-700" />
-              
-              <div className="relative">
-                {/* ラベル */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 shadow-sm">
-                    <Flame className="h-4 w-4 text-stone-700" />
-                    <span className="text-sm font-bold text-stone-900">深煎り</span>
-                  </div>
-                  <span className="text-xs font-medium text-stone-800 bg-white/80 px-3 py-1 rounded-full">
-                    Rich & Full Body
-                  </span>
+            <div>
+              <div className="flex items-center gap-2 mb-3 px-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-50 border border-stone-200">
+                  <Flame className="h-4 w-4 text-stone-700" />
+                  <span className="text-sm font-bold text-stone-900">深煎り</span>
                 </div>
-
-                {/* カード */}
-                {renderBeanCard(darkRoast)}
-                
-                {/* 説明 */}
-                <div className="mt-3 p-3 rounded-lg bg-white/60 backdrop-blur-sm">
-                  <p className="text-xs text-stone-900 leading-relaxed">
-                    <Coffee className="h-3 w-3 inline mr-1" />
-                    カカオとカラメルの香ばしさ。力強いコクと安心感のある、KCCオリジナルブレンド。
-                  </p>
+              </div>
+              <div className="relative -mx-4 px-4">
+                <div
+                  className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
+                  style={{ WebkitOverflowScrolling: "touch" }}
+                >
+                  <UniformCard bean={darkRoast} />
                 </div>
+                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
               </div>
             </div>
           )}
-
         </div>
       </section>
 
@@ -252,13 +240,31 @@ export default function MenuClient() {
             <h2 className="text-2xl font-bold">Special</h2>
             <span className="text-sm text-muted-foreground">数量限定 - ¥1,000</span>
           </div>
+
           <div className="rounded-2xl border-2 border-amber-200 bg-gradient-to-br from-amber-50/50 to-yellow-50/30 p-4 mb-4">
             <p className="text-sm text-amber-900 flex items-center gap-2">
               <Award className="h-4 w-4" />
               限定ロットのスペシャルティコーヒー。無くなり次第終了です。
             </p>
           </div>
-          <KccGrid>{specialBeans.map((b) => renderBeanCard(b))}</KccGrid>
+
+          {/* PC/タブレット：従来グリッド */}
+          <div className="hidden md:block">
+            <KccGrid>{specialBeans.map((b) => renderBeanCard(b))}</KccGrid>
+          </div>
+
+          {/* モバイル：PASSAGEと同サイズ（横スク） */}
+          <div className="md:hidden relative -mx-4 px-4">
+            <div
+              className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              {specialBeans.map((b) => (
+                <UniformCard key={b.id} bean={b} />
+              ))}
+            </div>
+            <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+          </div>
         </section>
       )}
 
@@ -294,7 +300,7 @@ export default function MenuClient() {
         診断する
       </Link>
 
-      {/* スクロールバー非表示のスタイル */}
+      {/* スクロールバー非表示 */}
       <style jsx>{`
         .scrollbar-hide::-webkit-scrollbar {
           display: none;
