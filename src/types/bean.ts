@@ -6,11 +6,17 @@ export type Bean = {
   variety?: string[];
   flavor: string[];
   photo: string;
-  radar: { acidity: number; sweetness: number; body: number; aroma: number; aftertaste: number };
+  radar: { 
+    acidity: number; 
+    sweetness: number; 
+    body: number; 
+    aroma: number; 
+    aftertaste: number 
+  };
   key?: string;
   process?: string;
   tags?: string[];
-  description?: string; // カードに表示する説明文
+  description?: string;
   
   // MenuBean用の追加プロパティ
   category?: "normal" | "special";
@@ -18,5 +24,12 @@ export type Bean = {
   roastLevel?: string;
   price?: string;
   stock?: "available" | "limited" | "soldout";
+  
+  // 詳細情報
+  altitude?: string;
+  producer?: string;
+  farm?: string;
+  region?: string;
+  tasteNote?: string[];
 };
 
