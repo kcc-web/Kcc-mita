@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +18,49 @@ import { Sparkles, Coffee, Award, Flame, Sun } from "lucide-react";
 
 const CARD_W = "w-[280px]";
 
+/** ===================== 設定：写真オーバーライド / 背景色 ===================== **/
+
+// 文字列→スラッグ化（nameで照合する用の保険）
+const slugify = (s?: string) =>
+  (s || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[()]/g, "");
+
+// ★ ここで“正しいファイル”を強制指定（拡張子は実ファイルに合わせて変えてOK）
+const PHOTO_OVERRIDES: Record<string, string> = {
+  // Ethiopia Natural = ethiopia.jpg
+  "ethiopia": "/beans/ethiopia.jpg",
+  "ethiopia-natural": "/beans/ethiopia.jpg",
+
+  // Ethiopia Washed = ethiopia-washed.jpg
+  "ethiopia-washed": "/beans/ethiopia-washed.jpg",
+
+  // KCC Blend = kcc-blend.jpg
+  "kcc-blend": "/beans/kcc-blend.jpg",
+  "kcc": "/beans/kcc-blend.jpg",
+};
+
+// 背景グラデーション（任意：見た目チューニング）
+const BG_GRADIENTS: Record<string, string> = {
+  brazil: "from-[#E8B7FF] to-[#FFF0C7]",
+  ethiopia: "from-[#FF9AA2] to-[#FFD3B5]",
+  "ethiopia-natural": "from-[#FF9AA2] to-[#FFD3B5]",
+  "ethiopia-washed": "from-[#A2F2F2] to-[#E0FFFA]",
+  honduras: "from-[#FFE57F] to-[#FFF5D9]",
+  "kcc-blend": "from-[#D97706] to-[#4B2E05]",
+};
+
+// キャッシュバスター付与（CDN/ブラウザに古いのを掴まれないように）
+const safePhoto = (src?: string, v = "5") => {
+  if (!src) return "/beans/placeholder.jpg";
+  const enc = src.startsWith("http") ? encodeURI(src) : src;
+  return enc.includes("?") ? `${enc}&v=${v}` : `${enc}?v=${v}`;
+};
+
+/** ===================== 本体 ===================== **/
+
 export default function MenuClient() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<MenuBean | null>(null);
@@ -25,140 +68,139 @@ export default function MenuClient() {
   const highlightRef = useRef<HTMLDivElement | null>(null);
 
   const sp = useSearchParams();
-  const router = useRouter();
   const beanParam = (sp.get("bean") || "").toLowerCase().trim();
 
   const normalBeans = getNormalBeans();
   const specialBeans = getSpecialBeans();
 
-  // --- 抽出：PASSAGE 3種 / 浅煎り（Mirai Seeds） / 深煎り（Papelburg） ---
-  const passageBeans = normalBeans.filter((b) => (b.roaster || "").toLowerCase() === "passage");
-  const lightRoast = normalBeans.find((b) => (b.roaster || "").toLowerCase() === "mirai seeds");
-  const darkRoast = normalBeans.find((b) => (b.roaster || "").toLowerCase() === "papelburg");
+  const passageBeans = normalBeans.filter(
+    (b) => (b.roaster || "").toLowerCase() === "passage"
+  );
+  const lightRoast = normalBeans.find(
+    (b) => (b.roaster || "").toLowerCase() === "mirai seeds"
+  );
+  const darkRoast = normalBeans.find(
+    (b) => (b.roaster || "").toLowerCase() === "papelburg"
+  );
 
-  // URLクエリ (?bean=) で指定があればハイライト、なければlocalStorageから読み取り
+  // ハイライト（URL ?bean= または localStorage）
   useEffect(() => {
-    let targetBeanId = beanParam;
-    
-    // URLパラメータがない場合、localStorageから読み取り
-    if (!targetBeanId) {
+    let target = beanParam;
+    if (!target) {
       try {
         const stored = localStorage.getItem("kcc-quiz-highlighted-bean");
-        if (stored) {
-          targetBeanId = stored.toLowerCase().trim();
-        }
-      } catch {
-        // localStorageが使えない環境では無視
-      }
+        if (stored) target = stored.toLowerCase().trim();
+      } catch {}
     }
-    
-    if (!targetBeanId) {
-      setHighlight(null);
-      return;
-    }
+    if (!target) return;
+
     const all = [...normalBeans, ...specialBeans];
     const match = all.find(
       (b) =>
-        (b.key && b.key.toLowerCase() === targetBeanId) ||
-        (b.id && b.id.toString().toLowerCase() === targetBeanId) ||
-        (b.name && b.name.toLowerCase().includes(targetBeanId))
+        b.key?.toLowerCase() === target ||
+        b.id?.toString().toLowerCase() === target ||
+        b.name?.toLowerCase().includes(target)
     );
     if (match) {
-      const keyStr = match.key ?? match.id.toString();
+      const keyStr = match.key ?? match.id?.toString() ?? null;
       setHighlight(keyStr);
-      
-      // スクロール（少し遅延させて確実に要素が描画されてから）
       setTimeout(() => {
-        highlightRef.current?.scrollIntoView({ 
-          behavior: "smooth", 
-          block: "center" 
-        });
+        highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, 300);
     }
   }, [beanParam, normalBeans, specialBeans]);
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
-    if (!newOpen) {
-      setActive(null);
-    }
+    if (!newOpen) setActive(null);
   };
 
-  // 共通カード（16:9／幅280px）
-  const UniformCard = ({ bean }: { bean: MenuBean }) => (
-    <div 
-      className={`flex-shrink-0 ${CARD_W} snap-center`}
-      ref={highlight === (bean.key ?? bean.id.toString()) ? highlightRef : null}
-    >
-      {renderBeanCard(bean)}
-    </div>
-  );
+  /** 画像パス決定：id → nameスラッグの順でオーバーライド適用 */
+  const resolvePhoto = (b: MenuBean): string => {
+    const idKey = (b.id ?? "").toString().toLowerCase();
+    const nameKey = slugify(b.name);
+    const override = PHOTO_OVERRIDES[idKey] || PHOTO_OVERRIDES[nameKey];
+    return safePhoto(override || b.photo);
+  };
 
-  // 汎用カード（16:9）
+  /** 背景決定（なければデフォルト） */
+  const resolveBg = (b: MenuBean): string => {
+    const idKey = (b.id ?? "").toString().toLowerCase();
+    const nameKey = slugify(b.name);
+    return BG_GRADIENTS[idKey] || BG_GRADIENTS[nameKey] || "from-pink-50 to-orange-50";
+  };
+
+  /** カード描画 */
   const renderBeanCard = (b: MenuBean) => {
     const keyStr = b.key ?? b.id?.toString() ?? "";
     const isHL = highlight === keyStr;
+    const gradient = resolveBg(b);
+    const photo = resolvePhoto(b);
 
     return (
-      <div 
-        className={`transition-all duration-700 ${
-          isHL 
-            ? "" 
-            : ""
-        }`}
+      <div
+        key={b.id}
+        ref={isHL ? highlightRef : null}
+        className={`rounded-xl transition-all duration-700 bg-gradient-to-br ${gradient} p-[1px]`}
       >
-        <KccCard
-          key={b.id}
-          title={b.name}
-          description={b.description ?? ""}
-          image={{ src: b.photo, alt: b.name, ratio: "16/9" }}
-          className={
-            isHL
-              ? "shadow-[0_0_0_2px_rgba(251,207,232,0.4),0_8px_24px_-4px_rgba(244,114,182,0.15)]"
-              : ""
-          }
-          onClick={() => {
-            setActive(b);
-            setOpen(true);
-          }}
-          footer={
-            <div className="flex flex-wrap items-center gap-2">
-              {b.roaster && (
-                <KccTag>
-                  <Coffee className="h-3 w-3 mr-1 inline" />
-                  {b.roaster}
-                </KccTag>
-              )}
-              {b.roastLevel && <KccTag>{b.roastLevel}</KccTag>}
-              {b.price && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-xs font-semibold">
-                  {b.price}
-                </span>
-              )}
-              {b.stock === "limited" && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
-                  <Award className="h-3 w-3 mr-1" />
-                  数量限定
-                </span>
-              )}
-              {b.flavor?.slice(0, 2).map((f) => (
-                <KccTag key={f}>{f}</KccTag>
-              ))}
-            </div>
-          }
-        />
+        <div className="rounded-xl bg-white/70 backdrop-blur-sm">
+          <KccCard
+            title={b.name}
+            description={b.description ?? ""}
+            image={{ src: photo, alt: b.name, ratio: "16/9" }}
+            className={
+              isHL
+                ? "shadow-[0_0_0_2px_rgba(251,207,232,0.4),0_8px_24px_-4px_rgba(244,114,182,0.15)]"
+                : ""
+            }
+            onClick={() => {
+              setActive(b);
+              setOpen(true);
+            }}
+            footer={
+              <div className="flex flex-wrap items-center gap-2">
+                {b.roaster && (
+                  <KccTag>
+                    <Coffee className="h-3 w-3 mr-1 inline" />
+                    {b.roaster}
+                  </KccTag>
+                )}
+                {b.roastLevel && <KccTag>{b.roastLevel}</KccTag>}
+                {b.price && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-xs font-semibold">
+                    {b.price}
+                  </span>
+                )}
+                {b.stock === "limited" && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-semibold">
+                    <Award className="h-3 w-3 mr-1" />
+                    数量限定
+                  </span>
+                )}
+                {b.flavor?.slice(0, 2).map((f) => (
+                  <KccTag key={f}>{f}</KccTag>
+                ))}
+              </div>
+            }
+          />
+        </div>
       </div>
     );
   };
+
+  /** 横スク用の統一幅カード */
+  const UniformCard = ({ bean }: { bean: MenuBean }) => (
+    <div className={`flex-shrink-0 ${CARD_W} snap-center`} key={bean.id}>
+      {renderBeanCard(bean)}
+    </div>
+  );
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       {/* ヘッダー */}
       <header className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold">KCC Mita Menu</h1>
-        <p className="text-muted-foreground mt-2">
-          三田祭 提供コーヒーとワッフルのオンラインメニュー
-        </p>
+        <p className="text-muted-foreground mt-2">三田祭 提供コーヒーとワッフルのオンラインメニュー</p>
       </header>
 
       {/* 上部ボタン（PC） */}
@@ -180,14 +222,18 @@ export default function MenuClient() {
           <span className="text-sm text-muted-foreground">通常ライン - 全て¥700</span>
         </div>
 
-        {/* PC/タブレット：従来グリッド */}
+        {/* PC/タブレット：グリッド */}
         <div className="hidden md:block">
-          <KccGrid>{normalBeans.map((b) => renderBeanCard(b))}</KccGrid>
+          <KccGrid>
+            {normalBeans.map((b) => (
+              <div key={b.id}>{renderBeanCard(b)}</div>
+            ))}
+          </KccGrid>
         </div>
 
-        {/* モバイル：PASSAGE横スク → 浅/深を同サイズカードで表示 */}
+        {/* モバイル：横スク */}
         <div className="md:hidden space-y-8">
-          {/* 1) PASSAGE（横スクロール、カード幅統一） */}
+          {/* PASSAGE */}
           {passageBeans.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3 px-1">
@@ -212,13 +258,11 @@ export default function MenuClient() {
                 <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
               </div>
 
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                ← スワイプして比較 →
-              </p>
+              <p className="text-xs text-center text-muted-foreground mt-2">← スワイプして比較 →</p>
             </div>
           )}
 
-          {/* 2) 浅煎り（同サイズカード） */}
+          {/* 浅煎り */}
           {lightRoast && (
             <div>
               <div className="flex items-center gap-2 mb-3 px-1">
@@ -239,7 +283,7 @@ export default function MenuClient() {
             </div>
           )}
 
-          {/* 3) 深煎り（同サイズカード） */}
+          {/* 深煎り */}
           {darkRoast && (
             <div>
               <div className="flex items-center gap-2 mb-3 px-1">
@@ -278,12 +322,16 @@ export default function MenuClient() {
             </p>
           </div>
 
-          {/* PC/タブレット：従来グリッド */}
+          {/* PC/タブレット */}
           <div className="hidden md:block">
-            <KccGrid>{specialBeans.map((b) => renderBeanCard(b))}</KccGrid>
+            <KccGrid>
+              {specialBeans.map((b) => (
+                <div key={b.id}>{renderBeanCard(b)}</div>
+              ))}
+            </KccGrid>
           </div>
 
-          {/* モバイル：PASSAGEと同サイズ（横スク） */}
+          {/* モバイル横スク */}
           <div className="md:hidden relative -mx-4 px-4">
             <div
               className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 scrollbar-hide"
@@ -304,7 +352,7 @@ export default function MenuClient() {
         <KccCard
           title={WAFFLE.name}
           description={WAFFLE.description ?? ""}
-          image={{ src: WAFFLE.photo, alt: WAFFLE.name, ratio: "16/9" }}
+          image={{ src: safePhoto(WAFFLE.photo), alt: WAFFLE.name, ratio: "16/9" }}
           footer={
             <>
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-xs font-semibold">
@@ -343,3 +391,5 @@ export default function MenuClient() {
     </main>
   );
 }
+
+
