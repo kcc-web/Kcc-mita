@@ -170,14 +170,14 @@ export const BEANS: MenuBean[] = [
   // Glitch - Colombia Milan Culturing NG
   {
     id: "colombia-milan",
-    key: "kenya",
+    key: "colombia-milan",
     name: "Colombia Milan Culturing NG",
     origin: "Colombia",
     elevation: "-",
     variety: ["-"],
     flavor: ["Unique", "Experimental", "Complex"],
     tasteNote: ["Coming Soon"],
-    photo: "/beans/kenya.jpg",
+    photo: "/beans/colombia-milan",
     radar: { 
       acidity: 7,
       sweetness: 7,

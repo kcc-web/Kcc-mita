@@ -40,6 +40,7 @@ const PHOTO_OVERRIDES: Record<string, string> = {
   // KCC Blend = kcc-blend.jpg
   "kcc-blend": "/beans/kcc-blend.jpg",
   "kcc": "/beans/kcc-blend.jpg",
+  "colombia-milan": "/beans/colombia-milan.jpg", 
 };
 
 // 背景グラデーション（任意：見た目チューニング）
