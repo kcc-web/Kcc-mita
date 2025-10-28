@@ -1,17 +1,19 @@
 // src/components/ui/VenueStatusBadge.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { MapPin, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { composeCopy, pickColors } from "@/lib/format";
 
-// 日本語ステータスラベル
 const STATUS_LABEL: Record<string, string> = {
   available: "空いてる",
   moderate: "やや混雑",
   crowded: "混雑",
 };
+
+// ポーリング間隔（ミリ秒）
+const POLLING_INTERVAL = 5000; // 5秒
 
 export default function VenueStatusBadge({
   initialVenue,
@@ -26,33 +28,47 @@ export default function VenueStatusBadge({
   const [venue, setVenue] = useState(initialVenue);
   const [settings, setSettings] = useState(initialSettings);
 
-  // 初回同期（SSRとCSRの差分を吸収）
+  // ポーリングで定期的にデータを取得
+  const fetchVenueData = useCallback(async () => {
+    try {
+      const { data: venueData } = await supabase
+        .from("venue")
+        .select("*")
+        .limit(1)
+        .single();
+
+      if (venueData && JSON.stringify(venueData) !== JSON.stringify(venue)) {
+        setVenue(venueData);
+      }
+
+      const { data: settingsData } = await supabase
+        .from("settings")
+        .select("*")
+        .eq("id", 1)
+        .single();
+
+      if (settingsData) {
+        setSettings({
+          ...settingsData,
+          colors: pickColors(settingsData),
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch venue data:", error);
+    }
+  }, [supabase, venue]);
+
+  // 初回同期 + ポーリング設定
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from("venue").select("*").limit(1).single();
-      if (data && JSON.stringify(data) !== JSON.stringify(initialVenue)) setVenue(data);
-    })();
-  }, [supabase, initialVenue]);
+    // 初回実行
+    fetchVenueData();
 
-  // Realtime購読（venue / settings）
-  useEffect(() => {
-    const chVenue = supabase
-      .channel("venue_changes")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "venue" }, (p) => setVenue(p.new))
-      .subscribe();
+    // 定期ポーリング
+    const intervalId = setInterval(fetchVenueData, POLLING_INTERVAL);
 
-    const chSettings = supabase
-      .channel("settings_changes")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "settings" }, (p) =>
-        setSettings({ ...settings, ...p.new, colors: pickColors(p.new) })
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(chVenue);
-      supabase.removeChannel(chSettings);
-    };
-  }, [supabase, settings]);
+    // クリーンアップ
+    return () => clearInterval(intervalId);
+  }, [fetchVenueData]);
 
   const copy = composeCopy(venue, settings);
   const pal =
@@ -66,7 +82,7 @@ export default function VenueStatusBadge({
 
   return (
     <div className={`relative ${className}`}>
-      {/* スマホ版：コンパクトな2行表示（クリック不要） */}
+      {/* スマホ版：コンパクトな2行表示 */}
       <div
         className="md:hidden inline-flex flex-col gap-1 min-w-0 rounded-xl border px-2 py-1.5 shadow-sm"
         style={{
@@ -74,7 +90,6 @@ export default function VenueStatusBadge({
           borderColor: pal.border,
         }}
       >
-        {/* 1行目：ステータス + 待ち時間 */}
         <div className="flex items-center gap-1.5">
           <span
             className="inline-block h-2 w-2 rounded-full flex-shrink-0"
@@ -94,7 +109,6 @@ export default function VenueStatusBadge({
           </span>
         </div>
 
-        {/* 2行目：場所 + 時間 */}
         <div className="flex items-center gap-2 text-[9px]" style={{ color: pal.text }}>
           <div className="flex items-center gap-0.5 opacity-80">
             <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
@@ -107,7 +121,7 @@ export default function VenueStatusBadge({
         </div>
       </div>
 
-      {/* タブレット・PC版：既存の横長デザイン */}
+      {/* タブレット・PC版 */}
       <div
         className="hidden md:inline-flex items-center gap-3 min-w-0 rounded-2xl border px-4 py-2.5 shadow-sm hover:shadow-md transition-shadow"
         style={{
@@ -115,13 +129,11 @@ export default function VenueStatusBadge({
           borderColor: pal.border,
         }}
       >
-        {/* ステータスドット */}
         <span
           className="inline-block h-3 w-3 rounded-full flex-shrink-0 shadow-sm"
           style={{ backgroundColor: pal.dot }}
         />
 
-        {/* ステータステキスト + メインコピー */}
         <div className="flex-1 min-w-0 text-left">
           <div className="flex items-baseline gap-2">
             <span
@@ -145,7 +157,6 @@ export default function VenueStatusBadge({
           </span>
         </div>
 
-        {/* 場所 */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <MapPin className="h-4 w-4 opacity-60" style={{ color: pal.text }} />
           <span className="text-xs font-medium whitespace-nowrap" style={{ color: pal.text }}>
@@ -153,7 +164,6 @@ export default function VenueStatusBadge({
           </span>
         </div>
 
-        {/* 時間 */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <Clock className="h-4 w-4 opacity-60" style={{ color: pal.text }} />
           <span className="text-xs font-medium whitespace-nowrap" style={{ color: pal.text }}>

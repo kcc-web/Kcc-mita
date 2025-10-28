@@ -1,3 +1,4 @@
+// src/components/hero/IntroOverlay.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -5,21 +6,26 @@ import dynamic from "next/dynamic";
 import type { LottieRefCurrentProps } from "lottie-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+// 動的インポート + プリロードなし（初回表示時のみロード）
+const Lottie = dynamic(() => import("lottie-react"), { 
+  ssr: false,
+  loading: () => null, // ローディング表示なし
+});
 
-import dropAnim   from "@/animations/drop-oil.json";
-import waveAnim   from "@/animations/wave-variant.json";
+// JSON を軽量化済みのものに差し替え（別途圧縮ツール使用を推奨）
+import dropAnim from "@/animations/drop-oil.json";
+import waveAnim from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
 
 type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
 
-const TIMINGS = { 
+const TIMINGS = {
   start: 800,
-  drop: 1800,
-  wave: 2500,
-  coffee: 3500,
-  linger: 1500,
-  fade: 1800
+  drop: 1500,   // 1800→1500に短縮
+  wave: 2000,   // 2500→2000に短縮
+  coffee: 3000, // 3500→3000に短縮
+  linger: 1200, // 1500→1200に短縮
+  fade: 1500,   // 1800→1500に短縮
 } as const;
 
 export default function IntroOverlay() {
@@ -30,6 +36,7 @@ export default function IntroOverlay() {
   const waveRef = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
+  // モーション控えめ設定のユーザーはスキップ
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -37,17 +44,18 @@ export default function IntroOverlay() {
     }
   }, []);
 
+  // フェーズ遷移
   useEffect(() => {
     if (!show) return;
     let t: ReturnType<typeof setTimeout> | null = null;
-    
+
     switch (phase) {
       case "start":
         t = setTimeout(() => setPhase("drop"), TIMINGS.start);
         break;
       case "drop":
         if (dropRef.current?.animationItem?.setSpeed) {
-          dropRef.current.animationItem.setSpeed(1.8);
+          dropRef.current.animationItem.setSpeed(2.0); // 1.8→2.0に高速化
         }
         t = setTimeout(() => setPhase("wave"), TIMINGS.drop);
         break;
@@ -67,12 +75,13 @@ export default function IntroOverlay() {
         t = setTimeout(() => setShow(false), TIMINGS.fade);
         break;
     }
-    
+
     return () => {
       if (t) clearTimeout(t);
     };
   }, [phase, show]);
 
+  // 強制終了タイマー
   useEffect(() => {
     if (!show) return;
     const totalTime = Object.values(TIMINGS).reduce((a, b) => a + b, 0);
@@ -80,8 +89,9 @@ export default function IntroOverlay() {
     return () => clearTimeout(killer);
   }, [show]);
 
+  // ESC/Spaceでスキップ
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { 
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === " ") {
         setShow(false);
       }
@@ -92,7 +102,6 @@ export default function IntroOverlay() {
 
   if (!show) return null;
 
-  // ★ B案：ここで fade 状態を boolean 化（以降のナローイング影響を受けない）
   const isFade = phase === "fade";
 
   return (
@@ -102,19 +111,20 @@ export default function IntroOverlay() {
         initial={{ opacity: 1 }}
         animate={{ opacity: isFade ? 0 : 1 }}
         exit={{ opacity: 0 }}
-        transition={{ 
+        transition={{
           duration: TIMINGS.fade / 1000,
-          ease: [0.43, 0.13, 0.23, 0.96]
+          ease: [0.43, 0.13, 0.23, 0.96],
         }}
         className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
         style={{
-          background: phase === "coffee" || phase === "linger"
-            ? "linear-gradient(135deg, #faf8f5 0%, #f5f1eb 50%, #faf8f5 100%)"
-            : "#ffffff"
+          background:
+            phase === "coffee" || phase === "linger"
+              ? "linear-gradient(135deg, #faf8f5 0%, #f5f1eb 50%, #faf8f5 100%)"
+              : "#ffffff",
         }}
         onClick={() => setShow(false)}
       >
-        {/* テクスチャ（coffee / linger） */}
+        {/* テクスチャ */}
         {(phase === "coffee" || phase === "linger") && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -123,16 +133,6 @@ export default function IntroOverlay() {
             className="absolute inset-0 pointer-events-none"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-            }}
-          />
-        )}
-
-        {/* テクスチャ（それ以外） */}
-        {phase !== "coffee" && phase !== "linger" && (
-          <div
-            className="absolute inset-0 opacity-[0.02] pointer-events-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
             }}
           />
         )}
@@ -158,16 +158,20 @@ export default function IntroOverlay() {
               className="absolute inset-0 flex items-center justify-center"
             >
               <Lottie
-                lottieRef={dropRef}
-                animationData={dropAnim}
-                loop={false}
-                autoplay
-                style={{ width: "100vw", height: "100vh", transform: "scale(1.5)" }}
-                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-              />
+lottieRef={dropRef}
+  animationData={dropAnim}
+  loop={false}
+  autoplay
+  style={{ width: "100vw", height: "100vh", transform: "scale(1.5)" }}
+  renderer="svg"                           // ← 追加
+  rendererSettings={{                      // ← ここは SVGRendererConfig のみ
+    preserveAspectRatio: "xMidYMid meet",
+  }}
+/>
+
             </motion.div>
           )}
-          
+
           {phase === "wave" && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -178,45 +182,49 @@ export default function IntroOverlay() {
             >
               <div style={{ width: 500, height: 500 }}>
                 <Lottie
-                  lottieRef={waveRef}
-                  animationData={waveAnim}
-                  loop={false}
-                  autoplay
-                  style={{ width: "100%", height: "100%" }}
-                  rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-                />
+  lottieRef={waveRef}
+  animationData={waveAnim}
+  loop={false}
+  autoplay
+  style={{ width: "100%", height: "100%" }}
+  renderer="svg"                           // ← 追加
+  rendererSettings={{
+    preserveAspectRatio: "xMidYMid meet",
+  }}
+/>
+
               </div>
             </motion.div>
           )}
-          
+
           {(phase === "coffee" || phase === "linger") && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ 
-                // ★ ここを isFade に置換（ナローイング由来の ts(2367) を回避）
+              transition={{
                 duration: isFade ? 1.5 : 0.8,
-                ease: isFade ? [0.43, 0.13, 0.23, 0.96] : "easeOut"
+                ease: isFade ? [0.43, 0.13, 0.23, 0.96] : "easeOut",
               }}
               className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
-              style={{ willChange: "transform, opacity" }}
             >
-              {/* コーヒーアニメーション */}
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.9, ease: "easeOut" }}
-                style={{ willChange: "transform, opacity" }}
               >
-                <Lottie
-                  lottieRef={coffeeRef}
-                  animationData={coffeeAnim}
-                  loop={false}
-                  autoplay
-                  style={{ width: 320, height: 320 }}
-                  rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
-                />
+              <Lottie
+  lottieRef={coffeeRef}
+  animationData={coffeeAnim}
+  loop={false}
+  autoplay
+  style={{ width: 320, height: 320 }}
+  renderer="svg"                           // ← 追加
+  rendererSettings={{
+    preserveAspectRatio: "xMidYMid meet",
+  }}
+/>
+
               </motion.div>
 
               {/* テキスト群 */}
@@ -225,9 +233,8 @@ export default function IntroOverlay() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="mt-6 text-center space-y-4"
-                style={{ willChange: "opacity" }}
               >
-                <h1 
+                <h1
                   className="text-xl md:text-2xl font-light text-gray-800"
                   style={{ letterSpacing: "0.15em" }}
                 >
@@ -239,7 +246,6 @@ export default function IntroOverlay() {
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
                   className="flex items-center justify-center gap-3"
-                  style={{ willChange: "transform" }}
                 >
                   <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
@@ -251,7 +257,6 @@ export default function IntroOverlay() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.8 }}
                   className="space-y-2 pt-2"
-                  style={{ willChange: "opacity" }}
                 >
                   <p className="text-2xl md:text-3xl lg:text-4xl font-serif text-gray-900 leading-relaxed">
                     日常を彩る、
@@ -266,7 +271,6 @@ export default function IntroOverlay() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 1.0, duration: 0.7 }}
                   className="text-sm md:text-base text-gray-600 font-light tracking-wide mt-4"
-                  style={{ willChange: "opacity" }}
                 >
                   A Cup of Coffee, A Moment of Joy
                 </motion.p>
@@ -277,7 +281,7 @@ export default function IntroOverlay() {
 
         {/* 進捗ドット */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {(["start","drop","wave","coffee","linger"] as Phase[]).map((p) => (
+          {(["start", "drop", "wave", "coffee", "linger"] as Phase[]).map((p) => (
             <motion.div
               key={p}
               className={`h-1 rounded-full transition-all ${
@@ -286,7 +290,8 @@ export default function IntroOverlay() {
               style={{ width: p === phase ? 40 : 24 }}
               animate={{
                 width: p === phase ? 40 : 24,
-                backgroundColor: p === phase ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.15)",
+                backgroundColor:
+                  p === phase ? "rgba(0,0,0,0.6)" : "rgba(0,0,0,0.15)",
               }}
               transition={{ duration: 0.3 }}
             />

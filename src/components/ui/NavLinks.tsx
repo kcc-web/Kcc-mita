@@ -1,21 +1,17 @@
+// src/components/ui/NavLinks.tsx
 "use client";
 
 import ActiveLink from "@/components/ui/ActiveLink";
-import { usePathname } from "next/navigation";
 
 export default function NavLinks() {
-  const pathname = usePathname();
-  // /quiz/intro は診断開始前なのでMenuを表示
-  // /quiz（診断中）のみMenuを非表示
-  const hideMenu = pathname === "/quiz" || pathname?.startsWith("/quiz/") && !pathname?.includes("/intro");
-
+  // ✅ hideMenuロジックを完全削除（常にMenuを表示）
   const items = [
     { href: "/", label: "Home" },
     { href: "/about", label: "About us" },
-    !hideMenu ? { href: "/menu", label: "Menu" } : null,
-    { href: "/quiz/intro", label: "MBTI 診断" },
+    { href: "/menu", label: "Menu" }, // ← 常に表示
+    { href: "/quiz/intro", label: "診断" },
     { href: "/contact", label: "Contact" },
-  ].filter(Boolean) as { href: string; label: string }[];
+  ];
 
   return (
     <nav className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 text-sm">
