@@ -1,47 +1,63 @@
-// /app/about/page.tsx
-import KccCard from "@/components/kcc/KccCard";
-import { KccGrid } from "@/components/kcc/KccGrid";
+// app/about/page.tsx
+import AboutClient from "./AboutClient";
 
-export const metadata = { title: "About us" };
+export const metadata = {
+  title: "About Us | KCC Mita",
+  description: "慶應珈琲倶楽部（KCC）のミッション、活動内容、メンバー紹介など。",
+};
 
-const missions = [
+const activities = [
   {
-    title: "私たちの理念",
-    desc: "コーヒーを通じて、人がつながる“場”をつくる。",
-    img: "/images/about/mission.jpg",
+    id: 1,
+    title: "ドリップ会",
+    description:
+      "豆の飲み比べや、各自が持ち寄った豆でコーヒーを楽しむ定期イベント",
+    image: "/images/activities/drip-session.jpg",
+    icon: "coffee",
+    tags: ["週1回", "日吉キャンパス"],
   },
   {
-    title: "活動内容",
-    desc: "三田祭・交流会・ワークショップ・焙煎体験などを企画運営。",
-    img: "/images/about/activity.jpg",
+    id: 2,
+    title: "カフェ巡り",
+    description: "都内の有名コーヒーショップを巡り、プロのテクニックを学ぶ",
+    image: "/images/activities/cafe-tour.jpg",
+    icon: "mapPin",
+    tags: ["月1回", "都内各地"],
   },
   {
-    title: "組織と体制",
-    desc: "KCC（慶應珈琲倶楽部）を中心に学内外と協働。",
-    img: "/images/about/team.jpg",
+    id: 3,
+    title: "三田祭出店",
+    description: "年間最大イベント。特製ブレンドと焼き菓子でおもてなし",
+    image: "/images/activities/mita-festival.jpg",
+    icon: "star",
+    tags: ["11月", "三田キャンパス"],
+  },
+  {
+    id: 4,
+    title: "POP UP カフェ",
+    description: "学内外でのイベント出店。コーヒー文化を広める活動",
+    image: "/images/activities/popup.jpg",
+    icon: "calendar",
+    tags: ["不定期", "各種イベント"],
+  },
+  {
+    id: 5,
+    title: "他大学交流",
+    description: "全国の大学コーヒーサークルとの交流会や合同イベント",
+    image: "/images/activities/exchange.jpg",
+    icon: "users",
+    tags: ["年3回", "関東圏"],
+  },
+  {
+    id: 6,
+    title: "プロセミナー",
+    description: "珈琲店のプロから直接学ぶ焙煎・抽出技術のワークショップ",
+    image: "/images/activities/seminar.jpg",
+    icon: "sparkles",
+    tags: ["隔月", "特別講座"],
   },
 ];
 
 export default function AboutPage() {
-  return (
-    <main className="container mx-auto px-4 md:px-6 py-8 md:py-12">
-      <h1 className="text-3xl font-bold tracking-tight">About us</h1>
-      <p className="text-muted-foreground mt-2">
-        慶應珈琲倶楽部（KCC）は、コーヒーがもつ「人を近づける力」を信じています。
-      </p>
-
-      <div className="mt-8">
-        <KccGrid>
-          {missions.map((m) => (
-            <KccCard
-              key={m.title}
-              title={m.title}
-              description={m.desc}
-              image={{ src: m.img, alt: m.title, ratio: "16/9" }}
-            />
-          ))}
-        </KccGrid>
-      </div>
-    </main>
-  );
+  return <AboutClient activities={activities} />;
 }
