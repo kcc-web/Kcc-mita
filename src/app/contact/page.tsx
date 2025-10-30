@@ -1,5 +1,6 @@
 // app/contact/page.tsx
 import Link from "next/link";
+import { Mail, Instagram } from "lucide-react";
 
 export const metadata = {
   title: "Contact | KCC Mita",
@@ -30,31 +31,38 @@ const mailto = () =>
 
 export default function ContactPage() {
   return (
-    <main className="container mx-auto px-4 md:px-6 py-10">
+    <main className="relative min-h-screen bg-gradient-to-b from-white to-zinc-50">
       {/* ヘッダー */}
-      <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Contact</h1>
-        <p className="text-muted-foreground mt-2">
+      <header className="mx-auto max-w-5xl px-4 md:px-6 pt-14 pb-10 text-center">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-zinc-900">
+          Contact
+        </h1>
+        <p className="mt-3 max-w-2xl mx-auto text-sm md:text-base text-zinc-600 leading-relaxed">
           三田祭・取材・コラボ・慶應珈琲倶楽部に関するお問い合わせは、
-          <span className="font-medium"> Instagram </span>
+          <span className="font-medium text-zinc-800"> Instagram </span>
           または
-          <span className="font-medium"> メール </span>
+          <span className="font-medium text-zinc-800"> メール </span>
           で受け付けています。
         </p>
       </header>
 
-      {/* 連絡手段 */}
-      <section className="grid gap-4 sm:grid-cols-2">
+      {/* 連絡カード */}
+      <section className="mx-auto max-w-5xl px-4 md:px-6 grid gap-6 sm:grid-cols-2">
         {/* Instagram */}
-        <div className="rounded-2xl border border-border p-5 hover:shadow-sm transition">
-          <h2 className="text-xl font-semibold">Instagram</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            アカウント：<span className="font-mono">@keiocoffeeclub</span>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+          <div className="flex items-center gap-3">
+            <Instagram className="h-6 w-6 text-zinc-800" />
+            <h2 className="text-lg md:text-xl font-semibold text-zinc-900">
+              Instagram
+            </h2>
+          </div>
+          <p className="mt-2 text-sm text-zinc-600">
+            アカウント：<span className="font-mono text-zinc-800">@keiocoffeeclub</span>
           </p>
           <div className="mt-4">
             <Link
               href={IG_URL}
-              className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-secondary"
+              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 transition"
             >
               Instagramで開く
             </Link>
@@ -62,15 +70,20 @@ export default function ContactPage() {
         </div>
 
         {/* Email */}
-        <div className="rounded-2xl border border-border p-5 hover:shadow-sm transition">
-          <h2 className="text-xl font-semibold">Email</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            アドレス：<span className="font-mono">{MAIL}</span>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+          <div className="flex items-center gap-3">
+            <Mail className="h-6 w-6 text-zinc-800" />
+            <h2 className="text-lg md:text-xl font-semibold text-zinc-900">
+              Email
+            </h2>
+          </div>
+          <p className="mt-2 text-sm text-zinc-600">
+            アドレス：<span className="font-mono text-zinc-800">{MAIL}</span>
           </p>
           <div className="mt-4">
             <Link
               href={mailto()}
-              className="inline-flex items-center justify-center rounded-xl border px-4 py-2 text-sm font-medium hover:bg-secondary"
+              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:bg-zinc-50 transition"
             >
               メールを作成する
             </Link>
@@ -79,20 +92,26 @@ export default function ContactPage() {
       </section>
 
       {/* 受付内容 */}
-      <section className="mt-10">
-        <h3 className="text-lg font-semibold mb-2">受付内容</h3>
-        <ul className="list-disc pl-6 text-sm text-muted-foreground space-y-1">
-          <li>三田祭に関するご質問</li>
-          <li>慶應珈琲倶楽部の活動に関するご質問</li>
-          <li>取材・メディア掲載のご相談</li>
-          <li>コラボレーションや案件のご相談</li>
-        </ul>
+      <section className="mx-auto max-w-5xl px-4 md:px-6 mt-12">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h3 className="text-base md:text-lg font-semibold text-zinc-900">
+            受付内容
+          </h3>
+          <ul className="mt-3 list-disc pl-5 text-sm text-zinc-600 space-y-1.5">
+            <li>三田祭に関するご質問</li>
+            <li>慶應珈琲倶楽部の活動に関するご質問</li>
+            <li>取材・メディア掲載のご相談</li>
+            <li>コラボレーションや案件のご相談</li>
+          </ul>
+        </div>
       </section>
 
       {/* メールテンプレ */}
-      <section className="mt-10">
-        <h3 className="text-lg font-semibold mb-2">メールテンプレ（コピペ用）</h3>
-        <pre className="whitespace-pre-wrap rounded-xl border p-4 text-sm">
+      <section className="mx-auto max-w-5xl px-4 md:px-6 mt-12 mb-16">
+        <h3 className="text-base md:text-lg font-semibold text-zinc-900">
+          メールテンプレ（コピペ用）
+        </h3>
+        <pre className="mt-3 whitespace-pre-wrap rounded-2xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-800">
 {`件名：【お問い合わせ】
 
 本文：
@@ -108,12 +127,14 @@ export default function ContactPage() {
 
 【ご返信が取りやすい時間帯】`}
         </pre>
-        <p className="text-xs text-muted-foreground mt-2">
-          ※「メールを作成する」ボタンから開くと、上記テンプレートが自動で挿入されます。
+        <p className="mt-2 text-xs text-zinc-500">
+          ※「メールを作成する」ボタンから起動すると、上記テンプレートが自動挿入されます。
         </p>
       </section>
     </main>
   );
 }
+
+
 
 
