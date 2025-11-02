@@ -60,14 +60,31 @@ function resolveImage(beanId: string | undefined, fallbackImage: string): string
   return normalizeLocal(fromData) || normalizeLocal(fallbackImage) || "/beans/placeholder.jpg";
 }
 
+// src/app/result/ResultClient.tsx の冒頭に追加
+
 export default function ResultClient({ initial }: { initial: Initial }) {
-  const [scores, setScores] = useState<Scores>(() => ensureScores(initial));
+  // ===== デバッグログ =====
+  console.log("🎯 ResultClient received:", initial);
+  
+  const [scores, setScores] = useState<Scores>(() => {
+    const calculated = ensureScores(initial);
+    console.log("📊 Calculated Scores:", calculated);
+    return calculated;
+  });
   
   useEffect(() => {
-    setScores(ensureScores(initial));
+    const recalculated = ensureScores(initial);
+    console.log("♻️ Recalculated Scores:", recalculated);
+    setScores(recalculated);
   }, [initial.score, initial.type]);
 
-  const picked = useMemo(() => pickBeanType(scores), [scores]);
+  const picked = useMemo(() => {
+    const result = pickBeanType(scores);
+    console.log("☕ Picked Bean Type:", result);
+    return result;
+  }, [scores]);
+  
+  // ... 以下既存コード
   const photoSrc = resolveImage(picked.beanId, picked.fallbackImage);
 
   useEffect(() => {

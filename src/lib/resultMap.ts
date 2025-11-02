@@ -5,7 +5,7 @@ export type Axes = "brightness" | "texture" | "sweetness" | "aroma";
 // 0..100
 export type Scores = Record<Axes, number>;
 
-export type BeanTypeKey = "classic" | "balancer" | "seeker" | "dreamer" | "pioneer";
+export type BeanTypeKey = "classic" | "balancer" | "seeker" | "dreamer" | "adventurer" | "pioneer";
 
 export type BeanProfile = {
   key: BeanTypeKey;
@@ -23,12 +23,12 @@ export type BeanProfile = {
   price?: string;             
 };
 
-// 5タイプ定義
+// 6タイプ定義
 export const BEAN_TYPES: BeanProfile[] = [
   {
     key: "classic",
-    beanName: "三田祭ブレンド",
-    beanId: "guatemala",
+    beanName: "KCC Blend",
+    beanId: "kcc-blend",
     typeName: "Classic",
     typeNameJa: "クラシック",
     tagline: "安心とコクの一杯",
@@ -39,14 +39,14 @@ export const BEAN_TYPES: BeanProfile[] = [
 ミルクとの相性も抜群で、カフェラテにしても存在感を失いません。
 伝統的なコーヒーの味わいを大切にする、信頼できる一杯です。`,
     profile: { brightness: 35, texture: 70, sweetness: 55, aroma: 60 },
-    fallbackImage: "/beans/guatemala.jpg",
+    fallbackImage: "/beans/kcc-blend.jpg",
     roast: "深煎り",
     price: "¥700",
   },
   {
     key: "balancer",
     beanName: "Honduras Washed",
-    beanId: "honduras",
+    beanId: "honduras-washed",
     typeName: "Balancer",
     typeNameJa: "バランサー",
     tagline: "やさしく調和のとれた軽やかさ",
@@ -75,7 +75,7 @@ export const BEAN_TYPES: BeanProfile[] = [
 一口ごとに味の輪郭がはっきりと感じられ、コーヒーの奥深さを探求できます。
 スペシャルティコーヒーの魅力を存分に味わいたい方におすすめです。`,
     profile: { brightness: 80, texture: 70, sweetness: 40, aroma: 70 },
-    fallbackImage: "/beans/ethiopia.jpg",
+    fallbackImage: "/beans/ethiopia-washed.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
@@ -98,48 +98,72 @@ export const BEAN_TYPES: BeanProfile[] = [
     price: "¥700",
   },
   {
+    key: "adventurer",
+    beanName: "Brazil Anaerobic Natural",
+    beanId: "brazil-anaerobic",
+    typeName: "Adventurer",
+    typeNameJa: "アドベンチャラー",
+    tagline: "トロピカルで濃厚な冒険",
+    tags: ["Tropical", "Creamy", "Sweet", "Exotic"],
+    desc: "マンゴーとワイルドハニー。クリーミーな甘さに包まれる体験。",
+    detailedDesc: `嫌気性発酵による独特のトロピカルフルーツの香り。
+マンゴー、ブラックベリー、パッションフルーツの複雑な甘さが層になって現れます。
+クリーミーなボディと長く続く甘い余韻が特徴で、
+デザートコーヒーとしても楽しめる、特別な体験を提供します。`,
+    profile: { brightness: 45, texture: 55, sweetness: 75, aroma: 80 },
+    fallbackImage: "/beans/brazil.jpg",
+    roast: "浅煎り",
+    price: "¥700",
+  },
+  {
     key: "pioneer",
-    beanName: "Mirai Seeds Red Catuai Fruity",
-    beanId: "kenya",
+    beanName: "Colombia Milan Culturing NG",
+    beanId: "colombia-milan",
     typeName: "Pioneer",
     typeNameJa: "パイオニア",
-    tagline: "「今だけ」に出会える特別な果実味（数量限定）",
-    tags: ["Deep", "Sharp", "Fruity", "Unique"],
-    desc: "未来志向の冒険者へ。限定の特別なフルーティさを体験。",
-    detailedDesc: `数量限定の特別なロット。Red Catuai種ならではの個性的な果実味が際立ちます。
-ブラックカラントやグレープフルーツのような複雑な香りと、
-力強い酸味が特徴で、一度飲んだら忘れられない印象を残します。
-新しい体験を求める、先駆者のあなたへ贈る特別な一杯です。`,
-    profile: { brightness: 40, texture: 80, sweetness: 35, aroma: 75 },
-    fallbackImage: "/beans/kenya.jpg",
+    tagline: "実験的で唯一無二の体験（数量限定）",
+    tags: ["Unique", "Experimental", "Complex", "Bold"],
+    desc: "未知の発酵プロセス。前例のない味わいを求める先駆者へ。",
+    detailedDesc: `Culturing NG プロセスによる、まだ誰も体験したことのない味わい。
+実験的な発酵技術が生み出す、予測不可能な風味のプロファイル。
+伝統的なコーヒーの枠を超えた、挑戦的で刺激的な一杯です。
+新しい可能性を追求する、真の冒険者のためのコーヒーです。`,
+    profile: { brightness: 20, texture: 85, sweetness: 30, aroma: 75 },
+    fallbackImage: "/beans/colombia-milan.jpg",
     roast: "浅煎り",
     price: "¥1,000",
   },
 ];
 
-// ユーザースコアとの距離（小さいほど近い）
-const distance = (a: Scores, b: Scores) =>
-  (a.brightness - b.brightness) ** 2 +
-  (a.texture - b.texture) ** 2 +
-  (a.sweetness - b.sweetness) ** 2 +
-  (a.aroma - b.aroma) ** 2;
+// Pioneerを選ばれにくくするペナルティ付き距離計算
+const distance = (a: Scores, b: Scores, key: BeanTypeKey) => {
+  const raw = 
+    (a.brightness - b.brightness) ** 2 +
+    (a.texture - b.texture) ** 2 +
+    (a.sweetness - b.sweetness) ** 2 +
+    (a.aroma - b.aroma) ** 2;
+  
+  // Pioneerは距離を2倍に（選ばれにくく）
+  return key === "pioneer" ? raw * 2.0 : raw;
+};
 
 // 最も近いタイプを1つ返す
 export function pickBeanType(scores: Scores): BeanProfile {
-  return BEAN_TYPES.reduce((best, cur) =>
-    distance(scores, cur.profile) < distance(scores, best.profile) ? cur : best
-  , BEAN_TYPES[0]);
+  return BEAN_TYPES.reduce((best, cur) => {
+    const curDist = distance(scores, cur.profile, cur.key);
+    const bestDist = distance(scores, best.profile, best.key);
+    return curDist < bestDist ? cur : best;
+  }, BEAN_TYPES[0]);
 }
 
 // --- ここから互換レイヤー（旧コード救済用） -------------------------
 export type MbtiType = "EN" | "IN" | "ES" | "IS";
-export type BeanKey = "ethiopia-washed" | "colombia" | "kenya" | "guatemala";
+export type BeanKey = "ethiopia-washed" | "colombia-milan" | "brazil-anaerobic" | "kcc-blend" | "honduras-washed" | "ethiopia-natural";
 
 export function beanForType(t: MbtiType): BeanKey {
   const u = (t ?? "EN").toUpperCase();
   if (u.startsWith("EN")) return "ethiopia-washed";
-  if (u.startsWith("ES")) return "kenya";
-  if (u.startsWith("IS")) return "guatemala";
-  return "colombia";
+  if (u.startsWith("ES")) return "colombia-milan";
+  if (u.startsWith("IS")) return "kcc-blend";
+  return "honduras-washed";
 }
-

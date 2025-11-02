@@ -1,3 +1,4 @@
+// src/app/quiz/QuizClient.tsx
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
@@ -38,17 +39,58 @@ export default function QuizClient() {
   const leftLabel = asAny.leftLabel ?? asAny.left ?? "全くそう思わない"
   const rightLabel = asAny.rightLabel ?? asAny.right ??"そう思う"
 
-  const handleAnswer = useCallback(
-    (value: number) => {
-      const next = [...answers];
-      next[index] = value;
-      setAnswers(next);
-      if (index < total - 1) {
-        setIndex(index + 1);
-      } else {
-       const resultType = computeMbtiType(QUESTIONS, next) as MbtiType;
-       const bean: BeanKey = beanForType(resultType);
-      router.push(`/result?type=${resultType}&bean=${encodeURIComponent(bean)}`);
+ 　// src/app/quiz/QuizClient.tsx の handleAnswer を修正
+
+const handleAnswer = useCallback(
+  (value: number) => {
+    const next = [...answers];
+    next[index] = value;
+    setAnswers(next);
+    
+    if (index < total - 1) {
+      setIndex(index + 1);
+    } else {
+      // ===== 直接スコア計算 =====
+      const scores = {
+        brightness: 0,
+        texture: 0,
+        sweetness: 0,
+        aroma: 0
+      };
+      
+      // 軸ごとに集計
+      const counts = { EI: 0, SN: 0, TF: 0, JP: 0 };
+      QUESTIONS.forEach((q, i) => {
+        const ans = next[i] ?? 3;
+        if (q.axis === "EI") {
+          scores.brightness += ans * 20; // 1-5 → 20-100
+          counts.EI++;
+        }
+        if (q.axis === "SN") {
+          scores.texture += ans * 20;
+          counts.SN++;
+        }
+        if (q.axis === "TF") {
+          scores.sweetness += ans * 20;
+          counts.TF++;
+        }
+        if (q.axis === "JP") {
+          scores.aroma += ans * 20;
+          counts.JP++;
+        }
+      });
+      
+      // 平均化
+      scores.brightness = scores.brightness / Math.max(1, counts.EI);
+      scores.texture = scores.texture / Math.max(1, counts.SN);
+      scores.sweetness = scores.sweetness / Math.max(1, counts.TF);
+      scores.aroma = scores.aroma / Math.max(1, counts.JP);
+      
+      console.log("📊 Final Scores:", scores);
+      
+      // MBTIはスキップ、スコアだけ渡す
+      const scoreStr = encodeURIComponent(JSON.stringify(scores));
+      router.push(`/result?score=${scoreStr}`);
     }
   },
   [answers, index, total, router]
