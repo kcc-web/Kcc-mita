@@ -1,4 +1,4 @@
-// src/app/page.tsx
+// src/app/page.tsx（修正版）
 import Link from "next/link";
 import { MapPin, Clock, Sparkles } from "lucide-react";
 import IntroOverlay from "@/components/hero/IntroOverlay";
@@ -11,10 +11,10 @@ export default function Home() {
         {/* メイングラデーション（ピンク→オレンジ→アンバー） */}
         <div className="absolute inset-0 bg-gradient-to-br from-pink-100 via-orange-50 to-amber-100" />
         
-        {/* 動的ブロブ */}
-        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full blur-3xl opacity-30 bg-gradient-to-tr from-pink-400 via-rose-300 to-orange-300 animate-blob" />
-        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full blur-3xl opacity-25 bg-gradient-to-tr from-amber-400 via-orange-300 to-yellow-300 animate-blob animation-delay-2000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-fuchsia-300 via-pink-300 to-rose-300 animate-blob animation-delay-4000" />
+        {/* 動的ブロブ（やや抑えめに） */}
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full blur-3xl opacity-25 bg-gradient-to-tr from-pink-300 via-rose-200 to-orange-200 animate-blob" />
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-amber-300 via-orange-200 to-yellow-200 animate-blob animation-delay-2000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full blur-3xl opacity-15 bg-gradient-to-tr from-fuchsia-200 via-pink-200 to-rose-200 animate-blob animation-delay-4000" />
         
         {/* 極薄グリッド（オプション） */}
         <div
@@ -52,10 +52,10 @@ export default function Home() {
           </p>
         </div>
 
-        {/* ダブルCTA */}
+        {/* ダブルCTA（落ち着いたピンク） */}
         <div className="mt-8 flex items-center justify-center gap-4">
           <Link href="/quiz/intro" className="group">
-            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white px-8 py-4 text-lg font-medium shadow-[0_8px_30px_rgba(255,105,180,0.3)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_12px_40px_rgba(255,105,180,0.4)] active:scale-[.98]">
+            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-amber-400 text-white px-8 py-4 text-lg font-medium shadow-[0_8px_30px_rgba(255,105,180,0.2)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_12px_40px_rgba(255,105,180,0.25)] active:scale-[.98]">
               診断をはじめる
             </span>
           </Link>
