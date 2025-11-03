@@ -28,7 +28,7 @@ const slugify = (s?: string) =>
     .replace(/\s+/g, "-")
     .replace(/[()]/g, "");
 
-// ★ ここで“正しいファイル”を強制指定（拡張子は実ファイルに合わせて変えてOK）
+// ★ ここで"正しいファイル"を強制指定（拡張子は実ファイルに合わせて変えてOK）
 const PHOTO_OVERRIDES: Record<string, string> = {
   // Ethiopia Natural = ethiopia.jpg
   "ethiopia": "/beans/ethiopia.jpg",
@@ -392,5 +392,4 @@ export default function MenuClient() {
     </main>
   );
 }
-
 
