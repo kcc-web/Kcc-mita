@@ -87,12 +87,24 @@ export default function MenuClient() {
   // ハイライト（URL ?bean= または localStorage）
   useEffect(() => {
     let target = beanParam;
-    if (!target) {
+    let shouldScroll = false;
+
+    // URLパラメータがある場合は優先（スクロールする）
+    if (target) {
+      shouldScroll = true;
+    } else {
+      // URLパラメータがない場合はlocalStorageをチェック
       try {
         const stored = localStorage.getItem("kcc-quiz-highlighted-bean");
-        if (stored) target = stored.toLowerCase().trim();
+        if (stored) {
+          target = stored.toLowerCase().trim();
+          shouldScroll = true;
+          // ★ ここで即座に削除（一度きりのスクロール）
+          localStorage.removeItem("kcc-quiz-highlighted-bean");
+        }
       } catch {}
     }
+
     if (!target) return;
 
     const all = [...normalBeans, ...specialBeans];
@@ -102,12 +114,17 @@ export default function MenuClient() {
         b.id?.toString().toLowerCase() === target ||
         b.name?.toLowerCase().includes(target)
     );
+    
     if (match) {
       const keyStr = match.key ?? match.id?.toString() ?? null;
       setHighlight(keyStr);
-      setTimeout(() => {
-        highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 300);
+      
+      // スクロールが必要な場合のみ実行
+      if (shouldScroll) {
+        setTimeout(() => {
+          highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 300);
+      }
     }
   }, [beanParam, normalBeans, specialBeans]);
 
