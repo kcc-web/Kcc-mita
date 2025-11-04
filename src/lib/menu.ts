@@ -89,7 +89,7 @@ export const BEANS: MenuBean[] = [
     variety: ["Ethiopian Heirloom"],
     flavor: ["Lemon", "Jasmine", "White Peach"],
     tasteNote: ["Lemon", "White Peach", "Jasmine", "Honey", "Spice"],
-    photo: "/beans/ethiopia.webp",
+    photo: "/beans/ethiopia-washed.webp",
     radar: { 
       acidity: 8,    // レモンの明るく爽やかな酸味
       sweetness: 7,  // ハチミツと白桃の甘さ
