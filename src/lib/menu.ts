@@ -29,7 +29,7 @@ export const BEANS: MenuBean[] = [
     variety: ["Pacas"],
     flavor: ["Apricot", "Persimmon", "Pear"],
     tasteNote: ["Apricot", "Persimmon", "Pear", "Lemon", "Honey"],
-    photo: "/beans/honduras.jpg",
+    photo: "/beans/honduras.webp",
     radar: { 
       acidity: 6,    // レモンの明るい酸味
       sweetness: 7,  // ハチミツの甘さ
@@ -60,7 +60,7 @@ export const BEANS: MenuBean[] = [
     variety: ["Ethiopian Heirloom"],
     flavor: ["Floral", "White Peach", "Cranberry"],
     tasteNote: ["Floral", "White Peach", "Cranberry", "Lime", "Spice"],
-    photo: "/beans/ethiopia.jpg",
+    photo: "/beans/ethiopia.webp",
     radar: { 
       acidity: 7,    // ライムの爽やかな酸味
       sweetness: 9,  // 白桃の甘さ
