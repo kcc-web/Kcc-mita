@@ -1,4 +1,4 @@
-// src/app/page.tsx（修正版）
+// src/app/page.tsx（診断ボタン強調版）
 import Link from "next/link";
 import { MapPin, Clock, Sparkles } from "lucide-react";
 import IntroOverlay from "@/components/hero/IntroOverlay";
@@ -52,15 +52,18 @@ export default function Home() {
           </p>
         </div>
 
-        {/* ダブルCTA（落ち着いたピンク） */}
+        {/* ダブルCTA（診断ボタンを強調） */}
         <div className="mt-8 flex items-center justify-center gap-4">
           <Link href="/quiz/intro" className="group">
-            <span className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-amber-400 text-white px-8 py-4 text-lg font-medium shadow-[0_8px_30px_rgba(255,105,180,0.2)] transition-all duration-300 group-hover:scale-[1.03] group-hover:shadow-[0_12px_40px_rgba(255,105,180,0.25)] active:scale-[.98]">
+            <span 
+              className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-amber-400 text-white px-8 py-4 text-lg font-bold shadow-[0_8px_30px_rgba(255,105,180,0.25)] transition-all duration-300 group-hover:scale-[1.05] group-hover:shadow-[0_12px_40px_rgba(255,105,180,0.35)] active:scale-[.98]"
+              style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+            >
               診断をはじめる
             </span>
           </Link>
           <Link href="/menu" className="group">
-            <span className="inline-flex items-center rounded-full border-2 border-gray-300 bg-white/80 backdrop-blur-sm px-8 py-4 text-lg font-medium transition-all duration-300 hover:bg-white hover:border-gray-400 hover:shadow-md active:scale-[.98]">
+            <span className="inline-flex items-center rounded-full border-2 border-gray-300 bg-white/80 backdrop-blur-sm px-8 py-4 text-lg font-medium text-gray-700 transition-all duration-300 hover:bg-white hover:border-gray-400 hover:shadow-md active:scale-[.98]">
               メニューを見る
             </span>
           </Link>
@@ -109,6 +112,3 @@ export default function Home() {
     </main>
   );
 }
-
-
-
