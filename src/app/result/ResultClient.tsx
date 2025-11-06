@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import FlavorBar from "@/components/ui/FlavorBar";
-import { pickBeanType, type Scores, type Axes } from "@/lib/resultMap";
+import { pickBeanType, type Scores, type Axes, BEAN_TYPES } from "@/lib/resultMap";
 import * as MenuModule from "@/lib/menu";
 import { useMemo, useEffect, useState } from "react";
-import { Coffee, Sparkles, TrendingUp, Heart, MapPin, Award, Clock } from "lucide-react";
+import { Coffee, Sparkles, TrendingUp, Heart, MapPin, Award, Clock, Users } from "lucide-react";
+import { motion } from "framer-motion";
 
 type Initial = { type: string | null; bean: string | null; score: string | null };
 
@@ -101,68 +102,227 @@ export default function ResultClient({ initial }: { initial: Initial }) {
         </p>
       </header>
 
-      {/* メインCTA（スマホ最適化） */}
+      {/* ========== 教室での体験セクション（改善版） ========== */}
       <section className="mb-6 rounded-2xl border-2 border-pink-300 bg-gradient-to-br from-pink-50 via-white to-orange-50 p-4 md:p-6 shadow-xl relative overflow-hidden">
         {/* 背景装飾 */}
         <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full blur-3xl opacity-20 bg-gradient-to-tr from-pink-400 to-rose-400 pointer-events-none" />
 
-        <div className="relative z-10 text-center space-y-4">
-          {/* タイトル */}
-          <h2 className="text-lg md:text-2xl font-bold text-gray-900 leading-tight">
-            <span className="text-pink-600">{picked.beanName}</span> の<br className="sm:hidden" />
-            本物の香りを嗅いでみませんか？
-          </h2>
-
-          {/* 説明文 */}
-          <div className="max-w-xl mx-auto space-y-2 text-sm md:text-base">
-            <p className="text-gray-700 leading-relaxed">
-              画面越しでは伝わらない、<strong className="text-pink-700">豆そのものの香り</strong>が待っています。
-            </p>
+        <div className="relative z-10 space-y-6">
+          {/* ヘッダー */}
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full border border-pink-200 bg-white/80 backdrop-blur-sm px-4 py-1.5 shadow-sm">
+              <Sparkles className="h-4 w-4 text-pink-500" />
+              <span className="text-xs font-medium text-pink-900 tracking-wide">Your Next Step</span>
+            </div>
             
-            <p className="text-gray-600 leading-relaxed text-xs md:text-sm">
-              焙煎したての豆を手に取り、鼻を近づけた瞬間―<br />
-              フローラル、フルーティ、ナッツ…<br />
-              言葉では表現しきれない複雑な香りに包まれます。
-            </p>
-
-            <p className="text-gray-600 leading-relaxed text-xs md:text-sm">
-              そして、もし気に入ったら。<br />
-              <strong className="text-amber-700">その場でドリップした一杯</strong>を。<br />
-              あなたのタイプに合った最高の味わいを体験してください。
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
+              教室で体験できる<br className="sm:hidden" />4つのこと
+            </h2>
+            
+            <p className="text-sm text-gray-600 max-w-xl mx-auto leading-relaxed">
+              診断結果はあくまで目安です。<br />
+              実際の<strong className="text-pink-700">香り・味・スタッフのアドバイス</strong>で、
+              あなたに本当に合う一杯を見つけましょう。
             </p>
           </div>
 
-          {/* 2つの体験カード */}
-          <div className="grid grid-cols-2 gap-3 mt-4 max-w-md mx-auto">
-            <div className="rounded-xl bg-white/80 backdrop-blur-sm p-3 shadow-md border border-pink-100">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-400 flex items-center justify-center mx-auto mb-2">
-                <Coffee className="h-5 w-5 text-white" />
+          {/* 4つの体験カード */}
+          <div className="space-y-4">
+            {/* 体験① フレーバーカードをもらう */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="rounded-xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 p-4 md:p-5 shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-purple-100 p-2.5 flex-shrink-0">
+                  <Award className="h-5 w-5 md:h-6 md:w-6 text-purple-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base md:text-lg mb-2 text-gray-900">
+                    ① あなた専用のフレーバーカードをもらう
+                  </h3>
+                  <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                    <strong className="text-purple-700">{picked.typeName}（{picked.typeNameJa}）</strong>タイプ専用の
+                    <strong>フレーバーカード</strong>を差し上げます。
+                    カードには味の特徴や香りのヒントが記載されており、お持ち帰りいただけます。
+                  </p>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-purple-600 flex-shrink-0">📍</span>
+                      <div>
+                        <strong>場所：</strong>第一校舎133教室 受付カウンター
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-purple-600 flex-shrink-0">💬</span>
+                      <div>
+                        <strong>伝え方：</strong>「<span className="font-semibold">{picked.typeName}タイプ</span>のカードをください」
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-purple-600 flex-shrink-0">🎁</span>
+                      <div>
+                        <strong>特典：</strong>飲み比べのガイドとしても使えます
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-gray-900 mb-1">香りを嗅ぐ</h3>
-              <p className="text-xs text-gray-600 leading-snug">
-                焙煎直後の豆を直接。<br />
-                現地でしか体験できません。
-              </p>
-            </div>
+            </motion.div>
 
-            <div className="rounded-xl bg-white/80 backdrop-blur-sm p-3 shadow-md border border-amber-100">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center mx-auto mb-2">
-                <Coffee className="h-5 w-5 text-white" />
+            {/* 体験② サークル員からの豆提案 */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="rounded-xl border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 p-4 md:p-5 shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-blue-100 p-2.5 flex-shrink-0">
+                  <Users className="h-5 w-5 md:h-6 md:w-6 text-blue-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base md:text-lg mb-2 text-gray-900">
+                    ② サークル員があなたに合う豆を提案します
+                  </h3>
+                  <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                    診断タイプをベースに、コーヒー好きのサークル員が
+                    <strong className="text-blue-700">「こんな人にはこの豆がおすすめ」</strong>と
+                    パーソナルなアドバイスをします。
+                  </p>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 flex-shrink-0">💡</span>
+                      <div>
+                        <strong>例えば：</strong>「フルーティが好きなら、Ethiopiaの2種類を飲み比べてみては？」
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 flex-shrink-0">🎯</span>
+                      <div>
+                        <strong>深掘り：</strong>「普段どんなコーヒー飲みますか？」からの会話でより精度UP
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 flex-shrink-0">🆓</span>
+                      <div>
+                        <strong>気軽に：</strong>コーヒー初心者の方も大歓迎。遠慮なく質問してください
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* サークル員のコメント風吹き出し */}
+                  <div className="mt-3 relative">
+                    <div className="bg-blue-100 rounded-lg p-3 text-xs italic text-blue-900">
+                      <span className="not-italic font-bold">🎓 KCCメンバーより：</span><br />
+                      「診断はあくまでスタート地点。実際に話してみると、意外な好みが見つかることも多いです。
+                      ぜひ気軽に話しかけてください！」
+                    </div>
+                    <div className="absolute -bottom-2 left-6 w-4 h-4 bg-blue-100 rotate-45 transform origin-top-left"></div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-sm font-bold text-gray-900 mb-1">実際に飲む</h3>
-              <p className="text-xs text-gray-600 leading-snug">
-                プロが淹れる一杯。<br />
-                あなたのタイプの"答え合わせ"。
-              </p>
-            </div>
+            </motion.div>
+
+            {/* 体験③ 豆の香りを直接嗅ぐ */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="rounded-xl border-2 border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 md:p-5 shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-amber-100 p-2.5 flex-shrink-0">
+                  <Coffee className="h-5 w-5 md:h-6 md:w-6 text-amber-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base md:text-lg mb-2 text-gray-900">
+                    ③ 焙煎したての豆の香りを嗅ぐ
+                  </h3>
+                  <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                    <strong className="text-amber-700">{picked.beanName}</strong>を含む全6種類の豆をご用意。
+                    画面越しでは伝わらない、<strong>本物の香り</strong>を直接お確かめいただけます。
+                  </p>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 flex-shrink-0">📍</span>
+                      <div>
+                        <strong>場所：</strong>教室内「香りコーナー」（入口付近）
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 flex-shrink-0">👃</span>
+                      <div>
+                        <strong>体験方法：</strong>豆の入った瓶を手に取り、鼻を近づけて深呼吸
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-amber-600 flex-shrink-0">🔄</span>
+                      <div>
+                        <strong>比較OK：</strong>診断結果以外の豆も自由に嗅ぎ比べできます
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* 体験④ 実際に飲んで答え合わせ */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="rounded-xl border-2 border-rose-200 bg-gradient-to-br from-rose-50 to-pink-50 p-4 md:p-5 shadow-md hover:shadow-lg transition-shadow"
+            >
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-rose-100 p-2.5 flex-shrink-0">
+                  <Heart className="h-5 w-5 md:h-6 md:w-6 text-rose-700" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-base md:text-lg mb-2 text-gray-900">
+                    ④ 気に入ったら、その場でドリップした一杯を
+                  </h3>
+                  <p className="text-sm text-gray-700 mb-3 leading-relaxed">
+                    香りで「これだ！」と思ったら、プロが淹れる一杯をその場で味わえます。
+                    診断結果との<strong className="text-rose-700">「答え合わせ」</strong>をお楽しみください。
+                  </p>
+                  <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 space-y-2 text-xs">
+                    <div className="flex items-start gap-2">
+                      <span className="text-rose-600 flex-shrink-0">☕️</span>
+                      <div>
+                        <strong>提供方法：</strong>ハンドドリップで一杯ずつ丁寧に抽出
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-rose-600 flex-shrink-0">💰</span>
+                      <div>
+                        <strong>価格：</strong>通常ライン ¥700 / 限定ライン ¥1,000
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-rose-600 flex-shrink-0">🎉</span>
+                      <div>
+                        <strong>特典：</strong>もらったフレーバーカードと飲み比べると楽しさ倍増
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
-          {/* 会場情報（最初から開いた状態） */}
-          <div className="mt-5 text-left max-w-md mx-auto">
-            <div className="p-4 rounded-xl bg-white/80 border border-pink-200 text-sm space-y-3">
+          {/* 会場情報（コンパクト版） */}
+          <div className="mt-6 rounded-xl bg-white/80 backdrop-blur-sm border border-gray-200 p-4">
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
+                <div>
                   <p className="font-bold text-gray-900 mb-1">会場</p>
                   <p className="text-gray-700">慶應義塾大学 三田キャンパス</p>
                   <p className="text-gray-700">第一校舎 133教室</p>
@@ -171,7 +331,7 @@ export default function ResultClient({ initial }: { initial: Initial }) {
 
               <div className="flex items-start gap-3">
                 <Clock className="h-5 w-5 text-pink-600 flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
+                <div>
                   <p className="font-bold text-gray-900 mb-1">時間</p>
                   <p className="text-gray-700">10:00 - 18:00</p>
                   <p className="text-xs text-gray-600 mt-1">
@@ -179,17 +339,14 @@ export default function ResultClient({ initial }: { initial: Initial }) {
                   </p>
                 </div>
               </div>
-
-              {/* 鳥瞰図スペース */}
-              <div className="pt-3 border-t">
-                <p className="text-xs font-semibold text-gray-900 mb-2">アクセスマップ</p>
-                <div className="w-full h-48 rounded-lg bg-gray-100 flex items-center justify-center border border-gray-200">
-                  <p className="text-sm text-gray-500">
-                    ※ ここに鳥瞰図が入ります
-                  </p>
-                </div>
-              </div>
             </div>
+          </div>
+
+          {/* オプション：スクリーンショット推奨 */}
+          <div className="text-center">
+            <p className="text-xs text-gray-500">
+              💡 Tip: タイプ名「<strong>{picked.typeName}</strong>」を覚えておくとスムーズです
+            </p>
           </div>
         </div>
       </section>
