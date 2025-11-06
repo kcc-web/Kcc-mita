@@ -1,30 +1,28 @@
 // src/lib/resultMap.ts
-// 4軸キー
+
 export type Axes = "brightness" | "texture" | "sweetness" | "aroma";
-
-// 0..100
 export type Scores = Record<Axes, number>;
-
 export type BeanTypeKey = "classic" | "balancer" | "seeker" | "dreamer" | "adventurer" | "pioneer";
 
 export type BeanProfile = {
   key: BeanTypeKey;
-  beanName: string;           
-  beanId: string;             
-  typeName: string;           
-  typeNameJa: string;         
-  tagline: string;            
-  tags: string[];             
-  desc: string;               
-  detailedDesc: string;       
-  profile: Scores;            
-  fallbackImage: string;      
-  roast?: string;             
-  price?: string;             
+  beanName: string;
+  beanId: string;
+  typeName: string;
+  typeNameJa: string;
+  tagline: string;
+  tags: string[];
+  desc: string;
+  detailedDesc: string;
+  profile: Scores;
+  fallbackImage: string;
+  roast?: string;
+  price?: string;
 };
 
-// 6タイプ定義
+// ========== 均等配置された6タイプ（Pioneer以外） ==========
 export const BEAN_TYPES: BeanProfile[] = [
+  // 1. Classic（深煎り・まろやか・適度な甘さ・穏やか）
   {
     key: "classic",
     beanName: "KCC Blend",
@@ -38,11 +36,18 @@ export const BEAN_TYPES: BeanProfile[] = [
 朝のリセットや、仕事の合間にほっと一息つきたいときにぴったりです。
 ミルクとの相性も抜群で、カフェラテにしても存在感を失いません。
 伝統的なコーヒーの味わいを大切にする、信頼できる一杯です。`,
-    profile: { brightness: 35, texture: 70, sweetness: 55, aroma: 60 },
+    profile: { 
+      brightness: 30,  // Deep寄り
+      texture: 30,     // Soft寄り
+      sweetness: 50,   // 中間
+      aroma: 30        // Floral寄り（ナッツ・カカオ）
+    },
     fallbackImage: "/beans/kcc-blend.jpg",
     roast: "深煎り",
     price: "¥700",
   },
+
+  // 2. Balancer（中間・まろやか・甘め・穏やか）
   {
     key: "balancer",
     beanName: "Honduras Washed",
@@ -56,11 +61,18 @@ export const BEAN_TYPES: BeanProfile[] = [
 浅煎りながらもまろやかで、コーヒー初心者の方にもおすすめです。
 どんなシーンにも溶け込み、リラックスした時間を演出します。
 毎日飲んでも飽きない、安定感のある味わいです。`,
-    profile: { brightness: 50, texture: 40, sweetness: 65, aroma: 50 },
+    profile: { 
+      brightness: 50,  // 中間
+      texture: 30,     // Soft寄り
+      sweetness: 70,   // Sweet寄り
+      aroma: 50        // 中間
+    },
     fallbackImage: "/beans/honduras.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
+
+  // 3. Seeker（明るい・シャープ・すっきり・フローラル）
   {
     key: "seeker",
     beanName: "Ethiopia Washed",
@@ -74,11 +86,18 @@ export const BEAN_TYPES: BeanProfile[] = [
 フローラルな香りと明るい酸味が調和し、クリアな余韻を残します。
 一口ごとに味の輪郭がはっきりと感じられ、コーヒーの奥深さを探求できます。
 スペシャルティコーヒーの魅力を存分に味わいたい方におすすめです。`,
-    profile: { brightness: 80, texture: 70, sweetness: 40, aroma: 70 },
+    profile: { 
+      brightness: 70,  // Bright寄り
+      texture: 70,     // Sharp寄り
+      sweetness: 30,   // Clean寄り
+      aroma: 30        // Floral寄り
+    },
     fallbackImage: "/beans/ethiopia-washed.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
+
+  // 4. Dreamer（明るい・まろやか・甘い・フルーティ）
   {
     key: "dreamer",
     beanName: "Ethiopia Natural",
@@ -92,11 +111,18 @@ export const BEAN_TYPES: BeanProfile[] = [
 甘みが豊かで、まるでフルーツジュースのような爽やかさです。
 自由で創造的な発想を刺激し、リラックスした時間を彩ります。
 個性的なコーヒーを楽しみたい、冒険心のあるあなたにぴったりです。`,
-    profile: { brightness: 75, texture: 40, sweetness: 80, aroma: 85 },
+    profile: { 
+      brightness: 70,  // Bright寄り
+      texture: 30,     // Soft寄り
+      sweetness: 70,   // Sweet寄り
+      aroma: 70        // Fruity寄り
+    },
     fallbackImage: "/beans/ethiopia.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
+
+  // 5. Adventurer（中間・シャープ・甘い・フルーティ）
   {
     key: "adventurer",
     beanName: "Brazil Anaerobic Natural",
@@ -110,11 +136,18 @@ export const BEAN_TYPES: BeanProfile[] = [
 マンゴー、ブラックベリー、パッションフルーツの複雑な甘さが層になって現れます。
 クリーミーなボディと長く続く甘い余韻が特徴で、
 デザートコーヒーとしても楽しめる、特別な体験を提供します。`,
-    profile: { brightness: 45, texture: 55, sweetness: 75, aroma: 80 },
+    profile: { 
+      brightness: 50,  // 中間
+      texture: 70,     // Sharp寄り
+      sweetness: 70,   // Sweet寄り
+      aroma: 70        // Fruity寄り
+    },
     fallbackImage: "/beans/brazil.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
+
+  // 6. Pioneer（極端・実験的）← 選ばれにくい特殊枠
   {
     key: "pioneer",
     beanName: "Colombia Milan Culturing NG",
@@ -128,7 +161,12 @@ export const BEAN_TYPES: BeanProfile[] = [
 実験的な発酵技術が生み出す、予測不可能な風味のプロファイル。
 伝統的なコーヒーの枠を超えた、挑戦的で刺激的な一杯です。
 新しい可能性を追求する、真の冒険者のためのコーヒーです。`,
-    profile: { brightness: 20, texture: 85, sweetness: 30, aroma: 75 },
+    profile: { 
+      brightness: 20,  // 極Deep
+      texture: 85,     // 極Sharp
+      sweetness: 30,   // Clean寄り
+      aroma: 75        // Fruity寄り（実験的）
+    },
     fallbackImage: "/beans/colombia-milan.jpg",
     roast: "浅煎り",
     price: "¥1,000",
@@ -143,7 +181,6 @@ const distance = (a: Scores, b: Scores, key: BeanTypeKey) => {
     (a.sweetness - b.sweetness) ** 2 +
     (a.aroma - b.aroma) ** 2;
   
-  // Pioneerは距離を2倍に（選ばれにくく）
   return key === "pioneer" ? raw * 2.0 : raw;
 };
 
@@ -156,7 +193,7 @@ export function pickBeanType(scores: Scores): BeanProfile {
   }, BEAN_TYPES[0]);
 }
 
-// --- ここから互換レイヤー（旧コード救済用） -------------------------
+// --- 旧コード互換レイヤー ---
 export type MbtiType = "EN" | "IN" | "ES" | "IS";
 export type BeanKey = "ethiopia-washed" | "colombia-milan" | "brazil-anaerobic" | "kcc-blend" | "honduras-washed" | "ethiopia-natural";
 

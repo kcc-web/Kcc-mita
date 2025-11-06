@@ -72,7 +72,7 @@ export const QUESTIONS: Question[] = [
   { 
     id: 9, 
     axis: "SN", 
-    text: "フルーティーで酸味のあるコーヒーが好きだ。",
+    text: "酸味を感じるコーヒーが好きか。",
     leftLabel: "全くそう思わない",
     rightLabel: "とてもそう思う"
   },

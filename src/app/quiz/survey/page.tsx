@@ -6,19 +6,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, User, Eye, Info } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { pickBeanType, type Scores } from "@/lib/resultMap";
 
 export default function SurveyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const supabase = createClient();
   
   const [ageGroup, setAgeGroup] = useState<string>("");
   const [seenHandDrip, setSeenHandDrip] = useState<string>("");
   const [knownSpecialty, setKnownSpecialty] = useState<string>("");
+  const [saving, setSaving] = useState(false);
 
   const score = searchParams.get("score");
 
   useEffect(() => {
-    // スコアがない場合は診断画面に戻す
     if (!score) {
       router.push("/quiz/intro");
     }
@@ -27,25 +30,53 @@ export default function SurveyPage() {
   const canProceed = ageGroup && seenHandDrip && knownSpecialty;
 
   const handleSubmit = async () => {
-    if (!canProceed) return;
+    if (!canProceed || !score) return;
+    
+    setSaving(true);
 
-    // アンケート結果を保存（後でSupabaseに送信可能）
-    const surveyData = {
-      ageGroup,
-      seenHandDrip: seenHandDrip === "yes",
-      knownSpecialty,
-      timestamp: new Date().toISOString(),
-    };
-
-    console.log("📊 Survey data:", surveyData);
-
-    // localStorageに保存（オプション）
     try {
-      localStorage.setItem("kcc-survey", JSON.stringify(surveyData));
-    } catch {}
+      // スコアをパース
+      const scores: Scores = JSON.parse(decodeURIComponent(score));
+      const picked = pickBeanType(scores);
 
-    // 結果ページへ
-    router.push(`/result?score=${score}`);
+      // Supabaseに保存
+      const { error } = await supabase.from("quiz_results").insert({
+        brightness: Math.round(scores.brightness),
+        texture: Math.round(scores.texture),
+        sweetness: Math.round(scores.sweetness),
+        aroma: Math.round(scores.aroma),
+        result_type: picked.key,
+        result_bean_name: picked.beanName,
+        age_group: ageGroup,
+        seen_hand_drip: seenHandDrip === "yes",
+        known_specialty: knownSpecialty,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+      });
+
+      if (error) {
+        console.error("保存エラー:", error);
+        // エラーでも結果ページには進む
+      }
+
+      // localStorageにも保存（オプション）
+      try {
+        localStorage.setItem("kcc-survey", JSON.stringify({
+          ageGroup,
+          seenHandDrip: seenHandDrip === "yes",
+          knownSpecialty,
+          timestamp: new Date().toISOString(),
+        }));
+      } catch {}
+
+      // 結果ページへ
+      router.push(`/result?score=${score}`);
+    } catch (err) {
+      console.error("送信エラー:", err);
+      // エラーでも結果ページには進む
+      router.push(`/result?score=${score}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -172,12 +203,12 @@ export default function SurveyPage() {
         >
           <Button
             onClick={handleSubmit}
-            disabled={!canProceed}
+            disabled={!canProceed || saving}
             size="lg"
             className="w-full h-14 text-base font-bold bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 hover:scale-105 transition-transform shadow-xl disabled:opacity-50 disabled:scale-100"
           >
-            結果を見る
-            <ChevronRight className="h-5 w-5 ml-2" />
+            {saving ? "送信中..." : "結果を見る"}
+            {!saving && <ChevronRight className="h-5 w-5 ml-2" />}
           </Button>
         </motion.div>
       </div>
