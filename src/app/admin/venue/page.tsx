@@ -54,34 +54,49 @@ export default function VenueAdminPage() {
   }
 
   async function handleSave() {
-    if (!venue) return;
-    
-    setSaving(true);
-    setError(null);
-    setSuccess(false);
-    
-    try {
-      const { error } = await supabase
-        .from("venue")
-        .update({
-          status: venue.status,
-          wait_from: venue.wait_from,
-          wait_to: venue.wait_to,
-          short_location: venue.short_location,
-          hours: venue.hours,
-        })
-        .eq("id", venue.id);
+  if (!venue) return;
 
-      if (error) throw error;
-      
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
+  setSaving(true);
+  setError(null);
+  setSuccess(false);
+
+  try {
+    console.log("Saving venue", venue); // 🔍 デバッグログ
+
+    const { data, error } = await supabase
+      .from("venue")
+      .update({
+        status: venue.status,
+        wait_from: venue.wait_from,
+        wait_to: venue.wait_to,
+        short_location: venue.short_location,
+        hours: venue.hours,
+      })
+      .eq("id", venue.id)
+      .select("*") // ← 更新された行を返す
+      .single();   // ← 1件じゃなかったらエラー
+
+    if (error) {
+      console.error("Update error:", error);
+      throw error;
     }
+
+    console.log("Updated row:", data);
+
+    // 念のため state もサーバー側の値で更新しておく
+    setVenue(data as Venue);
+
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 3000);
+  } catch (err: any) {
+    console.error("Save failed:", err);
+    setError(err.message ?? "保存に失敗しました");
+  } finally {
+    setSaving(false);
   }
+}
+
+
 
   if (loading) {
     return (
