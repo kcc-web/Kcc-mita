@@ -53,7 +53,9 @@ export default function VenueAdminPage() {
     }
   }
 
-  async function handleSave() {
+  const VENUE_ID = 1; // ← 後で説明するけど、venue が1行だけならここ固定でOK
+
+async function handleSave() {
   if (!venue) return;
 
   setSaving(true);
@@ -61,7 +63,7 @@ export default function VenueAdminPage() {
   setSuccess(false);
 
   try {
-    console.log("Saving venue", venue); // 🔍 デバッグログ
+    console.log("🔧 Saving venue payload:", venue);
 
     const { data, error } = await supabase
       .from("venue")
@@ -72,29 +74,32 @@ export default function VenueAdminPage() {
         short_location: venue.short_location,
         hours: venue.hours,
       })
-      .eq("id", venue.id)
-      .select("*") // ← 更新された行を返す
-      .single();   // ← 1件じゃなかったらエラー
+      .eq("id", VENUE_ID)       // ← ここを venue.id じゃなく固定IDにしちゃう案
+      .select("*");             // ← arrayで返す（.single()やめる）
 
     if (error) {
-      console.error("Update error:", error);
+      console.error("❌ Update error:", error);
       throw error;
     }
 
-    console.log("Updated row:", data);
+    if (!data || data.length === 0) {
+      // 条件にマッチした行が0件のとき
+      throw new Error("venue のレコードが見つかりませんでした（id が間違っている可能性があります）");
+    }
 
-    // 念のため state もサーバー側の値で更新しておく
-    setVenue(data as Venue);
+    console.log("✅ Updated row from Supabase:", data[0]);
 
+    setVenue(data[0] as any);
     setSuccess(true);
     setTimeout(() => setSuccess(false), 3000);
   } catch (err: any) {
-    console.error("Save failed:", err);
+    console.error("🔥 Save failed:", err);
     setError(err.message ?? "保存に失敗しました");
   } finally {
     setSaving(false);
   }
 }
+
 
 
 
