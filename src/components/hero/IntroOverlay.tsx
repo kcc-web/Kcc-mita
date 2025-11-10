@@ -1,4 +1,3 @@
-// src/components/hero/IntroOverlay.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -6,13 +5,11 @@ import dynamic from "next/dynamic";
 import type { LottieRefCurrentProps } from "lottie-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// 動的インポート + プリロードなし（初回表示時のみロード）
-const Lottie = dynamic(() => import("lottie-react"), { 
+const Lottie = dynamic(() => import("lottie-react"), {
   ssr: false,
-  loading: () => null, // ローディング表示なし
+  loading: () => null,
 });
 
-// JSON を軽量化済みのものに差し替え（別途圧縮ツール使用を推奨）
 import dropAnim from "@/animations/drop-oil.json";
 import waveAnim from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
@@ -21,11 +18,11 @@ type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
 
 const TIMINGS = {
   start: 800,
-  drop: 1500,   // 1800→1500に短縮
-  wave: 2000,   // 2500→2000に短縮
-  coffee: 3000, // 3500→3000に短縮
-  linger: 1200, // 1500→1200に短縮
-  fade: 1500,   // 1800→1500に短縮
+  drop: 1500,
+  wave: 2000,
+  coffee: 3000,
+  linger: 1200,
+  fade: 1500,
 } as const;
 
 export default function IntroOverlay() {
@@ -36,7 +33,7 @@ export default function IntroOverlay() {
   const waveRef = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
-  // モーション控えめ設定のユーザーはスキップ
+  // reduce motion の人はスキップ
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -55,7 +52,7 @@ export default function IntroOverlay() {
         break;
       case "drop":
         if (dropRef.current?.animationItem?.setSpeed) {
-          dropRef.current.animationItem.setSpeed(2.0); // 1.8→2.0に高速化
+          dropRef.current.animationItem.setSpeed(2.0);
         }
         t = setTimeout(() => setPhase("wave"), TIMINGS.drop);
         break;
@@ -89,7 +86,7 @@ export default function IntroOverlay() {
     return () => clearTimeout(killer);
   }, [show]);
 
-  // ESC/Spaceでスキップ
+  // ESC / Space でスキップ
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === " ") {
@@ -137,7 +134,7 @@ export default function IntroOverlay() {
           />
         )}
 
-        {/* スキップヒント */}
+        {/* SKIP ヒント */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 0.35 }}
@@ -147,8 +144,9 @@ export default function IntroOverlay() {
           <p className="text-black/40 text-xs tracking-wider">SKIP (ESC)</p>
         </motion.div>
 
-        {/* アニメーション本体 */}
+        {/* 本体 */}
         <div className="relative w-full h-full flex items-center justify-center">
+          {/* DROP フェーズ：中央に正方形で表示 */}
           {phase === "drop" && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -157,21 +155,19 @@ export default function IntroOverlay() {
               transition={{ duration: 0.4 }}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <Lottie
-lottieRef={dropRef}
-  animationData={dropAnim}
-  loop={false}
-  autoplay
-  style={{ width: "100vw", height: "100vh", transform: "scale(1.5)" }}
-  renderer="svg"                           // ← 追加
-  rendererSettings={{                      // ← ここは SVGRendererConfig のみ
-    preserveAspectRatio: "xMidYMid meet",
-  }}
-/>
-
+              <div className="w-[min(520px,80vw)] h-[min(520px,80vw)]">
+                <Lottie
+                  lottieRef={dropRef}
+                  animationData={dropAnim}
+                  loop={false}
+                  autoplay
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </div>
             </motion.div>
           )}
 
+          {/* WAVE フェーズ */}
           {phase === "wave" && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -180,23 +176,19 @@ lottieRef={dropRef}
               transition={{ duration: 0.6, ease: "easeInOut" }}
               className="absolute flex items-center justify-center"
             >
-              <div style={{ width: 500, height: 500 }}>
+              <div className="w-[min(500px,80vw)] h-[min(500px,80vw)]">
                 <Lottie
-  lottieRef={waveRef}
-  animationData={waveAnim}
-  loop={false}
-  autoplay
-  style={{ width: "100%", height: "100%" }}
-  renderer="svg"                           // ← 追加
-  rendererSettings={{
-    preserveAspectRatio: "xMidYMid meet",
-  }}
-/>
-
+                  lottieRef={waveRef}
+                  animationData={waveAnim}
+                  loop={false}
+                  autoplay
+                  style={{ width: "100%", height: "100%" }}
+                />
               </div>
             </motion.div>
           )}
 
+          {/* COFFEE / LINGER フェーズ */}
           {(phase === "coffee" || phase === "linger") && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -213,21 +205,16 @@ lottieRef={dropRef}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.9, ease: "easeOut" }}
               >
-              <Lottie
-  lottieRef={coffeeRef}
-  animationData={coffeeAnim}
-  loop={false}
-  autoplay
-  style={{ width: 320, height: 320 }}
-  renderer="svg"                           // ← 追加
-  rendererSettings={{
-    preserveAspectRatio: "xMidYMid meet",
-  }}
-/>
-
+                <Lottie
+                  lottieRef={coffeeRef}
+                  animationData={coffeeAnim}
+                  loop={false}
+                  autoplay
+                  style={{ width: 320, height: 320 }}
+                />
               </motion.div>
 
-              {/* テキスト群 */}
+              {/* テキスト群はそのまま */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -301,5 +288,3 @@ lottieRef={dropRef}
     </AnimatePresence>
   );
 }
-
-
