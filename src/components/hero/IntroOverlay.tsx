@@ -1,3 +1,4 @@
+// src/components/hero/IntroOverlay.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -5,11 +6,13 @@ import dynamic from "next/dynamic";
 import type { LottieRefCurrentProps } from "lottie-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// 動的インポート
 const Lottie = dynamic(() => import("lottie-react"), {
   ssr: false,
   loading: () => null,
 });
 
+// JSON
 import dropAnim from "@/animations/drop-oil.json";
 import waveAnim from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
@@ -27,23 +30,36 @@ const TIMINGS = {
 
 export default function IntroOverlay() {
   const [phase, setPhase] = useState<Phase>("start");
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(false); // ← 最初は非表示
 
   const dropRef = useRef<LottieRefCurrentProps>(null);
   const waveRef = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
-  // reduce motion の人はスキップ
+  // 初期判定：reduce-motion &「初回だけ表示」
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // モーション控えめ設定のユーザーはスキップ
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShow(false);
+      return;
     }
+
+    // すでに一度見た人はスキップ
+    const seen = window.localStorage.getItem("kcc_intro_seen");
+    if (seen === "1") {
+      return;
+    }
+
+    // 初回の人だけ表示 & フラグ保存
+    window.localStorage.setItem("kcc_intro_seen", "1");
+    setShow(true);
   }, []);
 
   // フェーズ遷移
   useEffect(() => {
     if (!show) return;
+
     let t: ReturnType<typeof setTimeout> | null = null;
 
     switch (phase) {
@@ -78,7 +94,7 @@ export default function IntroOverlay() {
     };
   }, [phase, show]);
 
-  // 強制終了タイマー
+  // 強制終了タイマー（フリーズ対策）
   useEffect(() => {
     if (!show) return;
     const totalTime = Object.values(TIMINGS).reduce((a, b) => a + b, 0);
@@ -86,7 +102,7 @@ export default function IntroOverlay() {
     return () => clearTimeout(killer);
   }, [show]);
 
-  // ESC / Space でスキップ
+  // ESC/Space でスキップ
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === " ") {
@@ -146,7 +162,7 @@ export default function IntroOverlay() {
 
         {/* 本体 */}
         <div className="relative w-full h-full flex items-center justify-center">
-          {/* DROP フェーズ：中央に正方形で表示 */}
+          {/* DROP フェーズ */}
           {phase === "drop" && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -155,15 +171,13 @@ export default function IntroOverlay() {
               transition={{ duration: 0.4 }}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <div className="w-[min(520px,80vw)] h-[min(520px,80vw)]">
-                <Lottie
-                  lottieRef={dropRef}
-                  animationData={dropAnim}
-                  loop={false}
-                  autoplay
-                  style={{ width: "100%", height: "100%" }}
-                />
-              </div>
+              <Lottie
+                lottieRef={dropRef}
+                animationData={dropAnim}
+                loop={false}
+                autoplay
+                style={{ width: "100vw", height: "100vh" }} // ← scale(1.5) を削除
+              />
             </motion.div>
           )}
 
@@ -176,7 +190,7 @@ export default function IntroOverlay() {
               transition={{ duration: 0.6, ease: "easeInOut" }}
               className="absolute flex items-center justify-center"
             >
-              <div className="w-[min(500px,80vw)] h-[min(500px,80vw)]">
+              <div style={{ width: 500, height: 500 }}>
                 <Lottie
                   lottieRef={waveRef}
                   animationData={waveAnim}
@@ -214,7 +228,7 @@ export default function IntroOverlay() {
                 />
               </motion.div>
 
-              {/* テキスト群はそのまま */}
+              {/* テキスト群 */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -288,3 +302,4 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
+
