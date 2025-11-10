@@ -6,13 +6,13 @@ import dynamic from "next/dynamic";
 import type { LottieRefCurrentProps } from "lottie-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// 動的インポート
+// 動的インポート（SSR無効）
 const Lottie = dynamic(() => import("lottie-react"), {
   ssr: false,
   loading: () => null,
 });
 
-// JSON
+// アニメーションJSON
 import dropAnim from "@/animations/drop-oil.json";
 import waveAnim from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
@@ -36,23 +36,23 @@ export default function IntroOverlay() {
   const waveRef = useRef<LottieRefCurrentProps>(null);
   const coffeeRef = useRef<LottieRefCurrentProps>(null);
 
-  // 初期判定：reduce-motion &「初回だけ表示」
+  // ✅ 「1セッション中に1回だけ表示」ロジック
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // モーション控えめ設定のユーザーはスキップ
+    // モーション控えめ設定の人は最初からスキップ
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return;
     }
 
-    // すでに一度見た人はスキップ
-    const seen = window.localStorage.getItem("kcc_intro_seen");
+    // sessionStorage にフラグがあれば同セッション中は出さない
+    const seen = window.sessionStorage.getItem("kcc_intro_seen");
     if (seen === "1") {
       return;
     }
 
-    // 初回の人だけ表示 & フラグ保存
-    window.localStorage.setItem("kcc_intro_seen", "1");
+    // 初回だけ表示してフラグを立てる
+    window.sessionStorage.setItem("kcc_intro_seen", "1");
     setShow(true);
   }, []);
 
@@ -94,7 +94,7 @@ export default function IntroOverlay() {
     };
   }, [phase, show]);
 
-  // 強制終了タイマー（フリーズ対策）
+  // 万が一フリーズしても強制終了（保険）
   useEffect(() => {
     if (!show) return;
     const totalTime = Object.values(TIMINGS).reduce((a, b) => a + b, 0);
@@ -102,7 +102,7 @@ export default function IntroOverlay() {
     return () => clearTimeout(killer);
   }, [show]);
 
-  // ESC/Space でスキップ
+  // ESC / Space でスキップ
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" || e.key === " ") {
@@ -176,7 +176,8 @@ export default function IntroOverlay() {
                 animationData={dropAnim}
                 loop={false}
                 autoplay
-                style={{ width: "100vw", height: "100vh" }} // ← scale(1.5) を削除
+                // ⬇ transform: "scale(1.5)" を削除（ブラウザ差が出やすいので）
+                style={{ width: "100vw", height: "100vh" }}
               />
             </motion.div>
           )}
@@ -302,4 +303,5 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
+
 
