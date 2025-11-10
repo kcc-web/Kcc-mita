@@ -14,7 +14,7 @@ export const QUESTIONS: Question[] = [
   { 
     id: 1, 
     axis: "TF", 
-    text: "他人の感情に強く共感する方だ。",
+    text: "見た目や雰囲気よりも「説明」などを重視する。",
     leftLabel: "全くそう思わない",
     rightLabel: "とてもそう思う"
   },

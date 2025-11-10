@@ -35,7 +35,7 @@ export const BEANS: MenuBean[] = [
       sweetness: 7,  // ハチミツの甘さ
       body: 5,       // ミディアムボディ
       aroma: 7,      // フルーツの香り
-      aftertaste: 6  // クリーンな余韻
+      aftertaste: 8  // クリーンな余韻
     },
     process: "Fully Washed",
     altitude: "1,650m",
@@ -59,18 +59,18 @@ export const BEANS: MenuBean[] = [
     elevation: "2,050-2,100m",
     variety: ["Ethiopian Heirloom"],
     flavor: ["Floral", "White Peach", "Cranberry"],
-    tasteNote: ["Floral", "White Peach", "Cranberry", "Lime", "Spice"],
+    tasteNote: ["Floral", "White Peach", "Cranberry", "Lime",],
     photo: "/beans/ethiopia.webp",
     radar: { 
-      acidity: 7,    // ライムの爽やかな酸味
-      sweetness: 9,  // 白桃の甘さ
-      body: 6,       // ミディアム～フル
-      aroma: 10,     // 華やかなフローラル
-      aftertaste: 8  // スパイシーな余韻
+      acidity: 8,    // ライムの爽やかな酸味
+      sweetness: 7,  // 白桃の甘さ
+      body: 5,       // ミディアム～フル
+      aroma: 7,     // 華やかなフローラル
+      aftertaste: 7  // スパイシーな余韻
     },
     process: "Natural",
     altitude: "2,050-2,100m",
-    description: "華やかな花の香りと白桃の甘さ。クランベリーとライムのフルーティな酸味にスパイスのアクセント。",
+    description: "ジャスミンの花の香りと白桃の甘さ。レモンのフルーティな酸味",
     category: "normal",
     roaster: "Passage",
     roastLevel: "浅煎り",
@@ -88,13 +88,13 @@ export const BEANS: MenuBean[] = [
     elevation: "2,050-2,100m",
     variety: ["Ethiopian Heirloom"],
     flavor: ["Lemon", "Jasmine", "White Peach"],
-    tasteNote: ["Lemon", "White Peach", "Jasmine", "Honey", "Spice"],
+    tasteNote: ["Lemon", "White Peach", "Jasmine", "Honey",],
     photo: "/beans/ethiopia-washed.webp",
     radar: { 
-      acidity: 8,    // レモンの明るく爽やかな酸味
+      acidity: 7,    // レモンの明るく爽やかな酸味
       sweetness: 7,  // ハチミツと白桃の甘さ
       body: 4,       // ライトボディ
-      aroma: 9,      // ジャスミンの香り
+      aroma: 6,      // ジャスミンの香り
       aftertaste: 7  // スパイシーでクリーンな余韻
     },
     process: "Fully Washed",
@@ -120,11 +120,11 @@ export const BEANS: MenuBean[] = [
     tasteNote: ["Mango", "Blackberry", "Passion Fruit", "Riped Grape", "Wild Honey"],
     photo: "/beans/brazil.jpg",
     radar: { 
-      acidity: 6,    // シトリックな酸味
+      acidity: 7,    // シトリックな酸味
       sweetness: 9,  // 熟したぶどうとワイルドハニーの甘さ
-      body: 8,       // クリーミーなボディ
+      body: 6,       // クリーミーなボディ
       aroma: 9,      // トロピカルフルーツの香り
-      aftertaste: 9  // 長く甘い余韻
+      aftertaste: 8  // 長く甘い余韻
     },
     process: "Anaerobic Natural",
     altitude: "1,100m",
