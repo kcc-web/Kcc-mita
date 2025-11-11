@@ -1,4 +1,3 @@
-// app/about/AboutClient.tsx
 "use client";
 
 import { motion } from "framer-motion";
@@ -40,19 +39,29 @@ export type Activity = {
 export default function AboutClient({ activities }: { activities: Activity[] }) {
   return (
     <main className="relative">
-      {/* ========== 1. Hero Section ========== */}
+      {/* ========== 1. Hero Section （動画版） ========== */}
       <section className="relative h-[60vh] md:h-[70vh] overflow-hidden">
+        {/* 背景動画 */}
         <div className="absolute inset-0">
-          <Image
-            src="/images/about/hero.jpg"
-            alt="KCC members brewing coffee"
-            fill
-            className="object-cover"
-            priority
-          />
+          <video
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            poster="/images/about/hero.jpg" // 読み込み前の静止画
+          >
+            {/* あれば webm も追加 */}
+            <source src="/videos/about-hero.webm" type="video/webm" />
+            <source src="/videos/about-hero.mp4" type="video/mp4" />
+          </video>
+
+          {/* 黒グラデーションのオーバーレイ */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
         </div>
 
+        {/* テキスト */}
         <div className="relative z-10 h-full flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -70,6 +79,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
           </motion.div>
         </div>
 
+        {/* スクロール誘導 */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -165,7 +175,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {activities.map((activity, index) => (
+          {activities.map((activity: Activity, index: number) => (
             <motion.div
               key={activity.id}
               initial={{ opacity: 0, y: 30 }}
@@ -196,7 +206,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
                     {activity.description}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {activity.tags.map((tag) => (
+                    {activity.tags.map((tag: string) => (
                       <span
                         key={tag}
                         className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium"
@@ -212,7 +222,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
         </div>
       </section>
 
-      {/* ========== CTA Section ========== */}
+      {/* ========== 5. CTA Section ========== */}
       <section className="py-16 md:py-20 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500">
         <div className="max-w-4xl mx-auto px-6 md:px-8 text-center">
           <motion.div
@@ -237,7 +247,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
-                href="https://www.instagram.com/" // 公式SNSに差し替え
+                href="https://www.instagram.com/" // TODO: 公式アカに差し替え
                 className="inline-flex items-center justify-center gap-2 bg-white/20 backdrop-blur-sm text-white border-2 border-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 transition-colors"
               >
                 SNSをフォロー
@@ -250,4 +260,3 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
     </main>
   );
 }
-
