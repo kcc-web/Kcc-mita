@@ -181,8 +181,8 @@ export const BEANS: MenuBean[] = [
     radar: { 
       acidity: 6,
       sweetness: 7,
-      body: 10,
-      aroma: 9,
+      body: 9,
+      aroma: 8,
       aftertaste: 7
     },
     process: "Culturing NG",

@@ -43,6 +43,7 @@ function useLottieOnce(
     forceCanvas?: boolean;
     dpr?: number;
     destroyOnComplete?: boolean;
+    segment?: [number, number]; // ★ 追加：再生するフレーム範囲
   }
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -56,14 +57,13 @@ function useLottieOnce(
 
     let disposed = false;
 
-    const renderer: "svg" | "canvas" =
-      opts?.forceCanvas
-        ? "canvas"
-        : isSafari()
-        ? "svg"
-        : shouldUseCanvas()
-        ? "canvas"
-        : "svg";
+    // 🔧 Safari は必ず svg、それ以外は canvas 優先
+    const safari = isSafari();
+    const canvasPreferred = shouldUseCanvas(); // Chrome / Insta / Android など
+    const useCanvas =
+      !safari && (opts?.forceCanvas || canvasPreferred); // Safari なら常に false
+
+    const renderer: "svg" | "canvas" = useCanvas ? "canvas" : "svg";
 
     const anim = lottie.loadAnimation({
       container: containerRef.current,
@@ -86,9 +86,18 @@ function useLottieOnce(
 
     const onDOM = () => {
       if (disposed) return;
-      anim.goToAndStop(0, true);
+      // ★ セグメント開始位置 or 0 にジャンプ
+      const startFrame = opts?.segment ? opts.segment[0] : 0;
+      anim.goToAndStop(startFrame, true);
+
       if (opts?.speed) anim.setSpeed(opts.speed);
-      anim.play();
+
+      // ★ セグメントがあればその範囲だけ再生
+      if (opts?.segment) {
+        anim.playSegments(opts.segment, true);
+      } else {
+        anim.play();
+      }
     };
 
     const onVisibility = () => {
@@ -140,6 +149,7 @@ function useLottieOnce(
     opts?.forceCanvas,
     opts?.dpr,
     opts?.destroyOnComplete,
+    opts?.segment, // ★ 依存に追加
   ]);
 
   return { containerRef, animRef };
@@ -168,35 +178,36 @@ export default function IntroOverlay() {
 
   // ===== 各フェーズ Lottie =====
 
-  // drop：forceCanvas + dpr=1 + 完了で destroy
+  // drop：1〜32フレームだけ再生（やや早め）、Safari は svg
   const { containerRef: dropRef } = useLottieOnce(
     phase === "drop" ? dropData : null,
     {
       loop: false,
-      speed: 1.2,          // 少しゆっくりめ
-      forceCanvas: true,   // 常に canvas
+      speed: 0.8,          // ちょい早め（そのままでもOK）
+      forceCanvas: true,   // Chrome / Insta / Android では canvas
       dpr: 1,              // 内部解像度 1（軽量）
       destroyOnComplete: true,
+      segment: [1, 32],    // ★ ここが「1〜32まで」
       onComplete: () => setPhase("wave"),
     }
   );
 
-  // wave：通常（onComplete で coffee）
+  // wave：全体を少しゆっくりめに
   const { containerRef: waveRef } = useLottieOnce(
     phase === "wave" ? waveData : null,
     {
       loop: false,
-      speed: 0.95,
+      speed: 0.9,          // ★ ちょっとだけスロー
       onComplete: () => setPhase("coffee"),
     }
   );
 
-  // coffee：通常
+  // coffee：さらに少しだけスロー
   const { containerRef: coffeeRef } = useLottieOnce(
     phase === "coffee" || phase === "linger" ? coffeeData : null,
     {
       loop: false,
-      speed: 0.9,
+      speed: 0.85,         // ★ wave より少しゆっくり
     }
   );
 
@@ -359,7 +370,7 @@ export default function IntroOverlay() {
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
-                  className="flex items-center justify中心 gap-3"
+                  className="flex items-center justify-center gap-3"
                 >
                   <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
