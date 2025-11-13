@@ -143,6 +143,32 @@ export default function BeanDialog({
               Flavor Profile
             </h3>
             <BeanRadar data={bean.radar} />
+            
+            {/* レーダーチャート説明 */}
+            <div className="mt-4 pt-3 border-t border-gray-100">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-[11px] text-gray-500">
+                <div className="flex items-start gap-1.5">
+                  <span className="text-pink-400 mt-0.5">•</span>
+                  <span><span className="font-medium text-gray-600">酸味：</span>高いほど酸味が強い</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-pink-400 mt-0.5">•</span>
+                  <span><span className="font-medium text-gray-600">甘味：</span>高いほど甘味が強い</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-pink-400 mt-0.5">•</span>
+                  <span><span className="font-medium text-gray-600">口当たり：</span>高いほどまろやか</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-pink-400 mt-0.5">•</span>
+                  <span><span className="font-medium text-gray-600">香り：</span>高いほど香りが強い</span>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="text-pink-400 mt-0.5">•</span>
+                  <span><span className="font-medium text-gray-600">余韻：</span>高いほど余韻が長い</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* フッター注釈 */}

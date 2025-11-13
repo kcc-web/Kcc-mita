@@ -9,10 +9,10 @@ import dropAnim from "@/animations/drop-oil.json";
 import waveAnim from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
 
-type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
+// start をやめて、最初から drop でスタート
+type Phase = "drop" | "wave" | "coffee" | "linger" | "fade";
 
 const TIMINGS = {
-  start: 800,
   coffee: 3000,
   linger: 1200,
   fade: 1500,
@@ -33,9 +33,6 @@ const shouldUseCanvas = () =>
 
 /**
  * Lottieを1回だけ安全に初期化
- * - StrictMode対策
- * - DOMLoaded後に0フレームから再生
- * - complete/visibility もここで管理
  */
 function useLottieOnce(
   animationData: object | null,
@@ -104,7 +101,6 @@ function useLottieOnce(
       if (disposed) return;
       opts?.onComplete?.();
       if (opts?.destroyOnComplete) {
-        // 完了後に即解放（drop だけで使う）
         try {
           anim.destroy();
         } catch {}
@@ -150,7 +146,8 @@ function useLottieOnce(
 }
 
 export default function IntroOverlay() {
-  const [phase, setPhase] = useState<Phase>("start");
+  // ★ 最初から drop でスタート（start フェーズなし）
+  const [phase, setPhase] = useState<Phase>("drop");
   const [show, setShow] = useState(false);
 
   const dropData = useMemo(() => dropAnim, []);
@@ -169,18 +166,6 @@ export default function IntroOverlay() {
     setShow(true);
   }, []);
 
-  // start → drop を「絶対1回だけ」にするガード
-  const startOnceRef = useRef(false);
-  useEffect(() => {
-    if (!show) return;
-    if (phase !== "start") return;
-    if (startOnceRef.current) return;
-    startOnceRef.current = true;
-
-    const id = setTimeout(() => setPhase("drop"), TIMINGS.start);
-    return () => clearTimeout(id);
-  }, [phase, show]);
-
   // ===== 各フェーズ Lottie =====
 
   // drop：forceCanvas + dpr=1 + 完了で destroy
@@ -188,7 +173,7 @@ export default function IntroOverlay() {
     phase === "drop" ? dropData : null,
     {
       loop: false,
-      speed: 1.2,          // 少しゆっくりめに
+      speed: 1.2,          // 少しゆっくりめ
       forceCanvas: true,   // 常に canvas
       dpr: 1,              // 内部解像度 1（軽量）
       destroyOnComplete: true,
@@ -196,7 +181,7 @@ export default function IntroOverlay() {
     }
   );
 
-  // wave：通常（環境に応じて svg/canvas）
+  // wave：通常（onComplete で coffee）
   const { containerRef: waveRef } = useLottieOnce(
     phase === "wave" ? waveData : null,
     {
@@ -240,8 +225,7 @@ export default function IntroOverlay() {
   // 保険（全体タイムアウト）
   useEffect(() => {
     if (!show) return;
-    const total =
-      TIMINGS.start + TIMINGS.coffee + TIMINGS.linger + TIMINGS.fade + 500;
+    const total = TIMINGS.coffee + TIMINGS.linger + TIMINGS.fade + 500;
     const killer = setTimeout(() => setShow(false), total);
     return () => clearTimeout(killer);
   }, [show]);
@@ -303,7 +287,7 @@ export default function IntroOverlay() {
 
         {/* 本体 */}
         <div className="relative w-full h-full flex items-center justify-center">
-          {/* DROP フェーズ */}
+          {/* DROP フェーズ（oil） */}
           {phase === "drop" && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -315,7 +299,7 @@ export default function IntroOverlay() {
             >
               <div
                 ref={dropRef}
-                // 内部解像度 dpr=1 前提で 70%くらいの実サイズに
+                // 内部解像度 dpr=1 前提で 70%くらいの実サイズ
                 style={{ width: "70vw", height: "70vh" }}
                 aria-hidden
               />
@@ -375,7 +359,7 @@ export default function IntroOverlay() {
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
-                  className="flex items-center justify-center gap-3"
+                  className="flex items-center justify中心 gap-3"
                 >
                   <div className="h-px w-12 bg-gradient-to-r from-transparent via-gray-400 to-gray-400" />
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-600" />
@@ -409,9 +393,9 @@ export default function IntroOverlay() {
           )}
         </div>
 
-        {/* 進捗ドット */}
+        {/* 進捗ドット（start抜きで4つ） */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
-          {(["start", "drop", "wave", "coffee", "linger"] as Phase[]).map((p) => (
+          {(["drop", "wave", "coffee", "linger"] as Phase[]).map((p) => (
             <motion.div
               key={p}
               className={`h-1 rounded-full transition-all ${
@@ -431,4 +415,3 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
-

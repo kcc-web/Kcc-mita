@@ -149,9 +149,9 @@ export const BEANS: MenuBean[] = [
     tasteNote: ["Cacao", "Caramel", "Roasted Nuts", "Brown Sugar"],
     photo: "/beans/guatemala.jpg",
     radar: { 
-      acidity: 4,    // マイルドな酸味
+      acidity: 5,    // マイルドな酸味
       sweetness: 6,  // カラメルの甘さ
-      body: 9,       // フルボディ
+      body: 7,       // フルボディ
       aroma: 7,      // 香ばしいナッツとカカオ
       aftertaste: 7  // ビターで長い余韻
     },
@@ -176,14 +176,14 @@ export const BEANS: MenuBean[] = [
     elevation: "-",
     variety: ["-"],
     flavor: ["Unique", "Experimental", "Complex"],
-    tasteNote: ["Coming Soon"],
+    tasteNote: ["Passion Fruit","Oolong Tea","Apple","Smooth","Bright"],
     photo: "/beans/colombia-milan",
     radar: { 
-      acidity: 7,
+      acidity: 6,
       sweetness: 7,
-      body: 6,
-      aroma: 8,
-      aftertaste: 8
+      body: 10,
+      aroma: 9,
+      aftertaste: 7
     },
     process: "Culturing NG",
     altitude: "-",
