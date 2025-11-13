@@ -15,15 +15,27 @@ type Phase = "drop" | "wave" | "coffee" | "linger" | "fade";
 const TIMINGS = {
   coffee: 3000,
   linger: 1200,
-  fade: 4700,
+  fade: 4500, // ★ フェードアウトを 3 秒に延長
 } as const;
 
-// ===== UA 判定（今は使わないが残すならここ） =====
-const isIGWebView = () =>
-  typeof navigator !== "undefined" && /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
+// ===== UA 判定 =====
+const isSafari = () =>
+  typeof navigator !== "undefined" &&
+  /Safari/i.test(navigator.userAgent) &&
+  !/Chrome|CriOS|Chromium|Edg|OPR/i.test(navigator.userAgent);
+
+const isChromeLike = () =>
+  typeof navigator !== "undefined" &&
+  /Chrome|CriOS|Chromium/i.test(navigator.userAgent) &&
+  !/Edg|OPR/i.test(navigator.userAgent);
+
+const isAndroid = () =>
+  typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent);
 
 /**
- * Lottieを1回だけ安全に初期化（常に SVG レンダラー）
+ * Lottieを1回だけ安全に初期化
+ * - Safari: 常に SVG（ヌメヌメ優先）
+ * - Chrome / Android: canvas 優先（SVG の謎の丸対策）
  */
 function useLottieOnce(
   animationData: object | null,
@@ -32,7 +44,7 @@ function useLottieOnce(
     loop?: boolean;
     onComplete?: () => void;
     destroyOnComplete?: boolean;
-    segment?: [number, number]; // 再生するフレーム範囲
+    segment?: [number, number];
   }
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -46,21 +58,27 @@ function useLottieOnce(
 
     let disposed = false;
 
-    // ここで renderer は常に svg
+    const safari = isSafari();
+    const canvasPreferred = isChromeLike() || isAndroid();
+    const useCanvas = !safari && canvasPreferred;
+
+    const renderer: "svg" | "canvas" = useCanvas ? "canvas" : "svg";
+
     const anim = lottie.loadAnimation({
       container: containerRef.current,
-      renderer: "svg",
+      renderer,
       loop: opts?.loop ?? false,
       autoplay: false,
       animationData,
       rendererSettings: {
-        progressiveLoad: false,
+        progressiveLoad: !useCanvas, // canvas 側は false の方が事故りにくい
         hideOnTransparent: true,
+        clearCanvas: useCanvas,
         preserveAspectRatio: "xMidYMid meet",
       },
     });
 
-    // ★ サブフレーム補間はデフォルトのまま（ヌメヌメさ重視）
+    // ★ サブフレーム補間はデフォルト ON（Safari のヌメヌメ感優先）
 
     const onDOM = () => {
       if (disposed) return;
@@ -176,7 +194,7 @@ export default function IntroOverlay() {
   );
 
   // coffee：さらに少しだけスロー
-  // ★ fade フェーズでも animationData を渡し続けることで最後まで表示したままにする
+  // fade フェーズでも animationData を渡し続けることで最後まで表示したままにする
   const { containerRef: coffeeRef } = useLottieOnce(
     phase === "coffee" || phase === "linger" || phase === "fade" ? coffeeData : null,
     {
@@ -235,8 +253,8 @@ export default function IntroOverlay() {
         animate={{ opacity: isFade ? 0 : 1 }}
         exit={{ opacity: 0 }}
         transition={{
-          duration: TIMINGS.fade / 1000,
-          ease: [0.43, 0.13, 0.23, 0.96],
+          duration: TIMINGS.fade / 1000, // ← 3秒フェードアウト
+          ease: [0.25, 0.1, 0.25, 1.0],  // ゆっくり溶ける感じのイージング
         }}
         className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
         style={{
@@ -316,7 +334,7 @@ export default function IntroOverlay() {
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{
                 duration: isFade ? 1.5 : 0.8,
-                ease: isFade ? [0.43, 0.13, 0.23, 0.96] : "easeOut",
+                ease: isFade ? [0.25, 0.1, 0.25, 1.0] : "easeOut",
               }}
               className="flex flex-col items-center justify-center px-6 max-w-2xl mx-auto"
             >
