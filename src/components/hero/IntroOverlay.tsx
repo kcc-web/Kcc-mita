@@ -15,24 +15,15 @@ type Phase = "drop" | "wave" | "coffee" | "linger" | "fade";
 const TIMINGS = {
   coffee: 3000,
   linger: 1200,
-  fade: 1500,
+  fade: 4700,
 } as const;
 
-// ===== UA 判定 =====
+// ===== UA 判定（今は使わないが残すならここ） =====
 const isIGWebView = () =>
   typeof navigator !== "undefined" && /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
 
-const isSafari = () =>
-  typeof navigator !== "undefined" &&
-  /Safari/i.test(navigator.userAgent) &&
-  !/Chrome|CriOS|Chromium/i.test(navigator.userAgent);
-
-const shouldUseCanvas = () =>
-  typeof navigator !== "undefined" &&
-  (isIGWebView() || /Android|Chrome|CriOS/i.test(navigator.userAgent));
-
 /**
- * Lottieを1回だけ安全に初期化
+ * Lottieを1回だけ安全に初期化（常に SVG レンダラー）
  */
 function useLottieOnce(
   animationData: object | null,
@@ -40,10 +31,8 @@ function useLottieOnce(
     speed?: number;
     loop?: boolean;
     onComplete?: () => void;
-    forceCanvas?: boolean;
-    dpr?: number;
     destroyOnComplete?: boolean;
-    segment?: [number, number]; // ★ 追加：再生するフレーム範囲
+    segment?: [number, number]; // 再生するフレーム範囲
   }
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -57,42 +46,30 @@ function useLottieOnce(
 
     let disposed = false;
 
-    // 🔧 Safari は必ず svg、それ以外は canvas 優先
-    const safari = isSafari();
-    const canvasPreferred = shouldUseCanvas(); // Chrome / Insta / Android など
-    const useCanvas =
-      !safari && (opts?.forceCanvas || canvasPreferred); // Safari なら常に false
-
-    const renderer: "svg" | "canvas" = useCanvas ? "canvas" : "svg";
-
+    // ここで renderer は常に svg
     const anim = lottie.loadAnimation({
       container: containerRef.current,
-      renderer,
+      renderer: "svg",
       loop: opts?.loop ?? false,
-      autoplay: false, // まず止める
+      autoplay: false,
       animationData,
       rendererSettings: {
-        progressiveLoad: true,
+        progressiveLoad: false,
         hideOnTransparent: true,
-        clearCanvas: true,
-        // @ts-ignore 内部解像度をコントロール
-        dpr: Math.max(1, Math.min(opts?.dpr ?? 2, 2)),
         preserveAspectRatio: "xMidYMid meet",
       },
     });
 
-    // @ts-ignore 環境差軽減
-    anim.setSubframe?.(false);
+    // ★ サブフレーム補間はデフォルトのまま（ヌメヌメさ重視）
 
     const onDOM = () => {
       if (disposed) return;
-      // ★ セグメント開始位置 or 0 にジャンプ
+
       const startFrame = opts?.segment ? opts.segment[0] : 0;
       anim.goToAndStop(startFrame, true);
 
       if (opts?.speed) anim.setSpeed(opts.speed);
 
-      // ★ セグメントがあればその範囲だけ再生
       if (opts?.segment) {
         anim.playSegments(opts.segment, true);
       } else {
@@ -146,17 +123,15 @@ function useLottieOnce(
     opts?.loop,
     opts?.speed,
     opts?.onComplete,
-    opts?.forceCanvas,
-    opts?.dpr,
     opts?.destroyOnComplete,
-    opts?.segment, // ★ 依存に追加
+    opts?.segment,
   ]);
 
   return { containerRef, animRef };
 }
 
 export default function IntroOverlay() {
-  // ★ 最初から drop でスタート（start フェーズなし）
+  // 最初から drop でスタート
   const [phase, setPhase] = useState<Phase>("drop");
   const [show, setShow] = useState(false);
 
@@ -178,16 +153,14 @@ export default function IntroOverlay() {
 
   // ===== 各フェーズ Lottie =====
 
-  // drop：1〜32フレームだけ再生（やや早め）、Safari は svg
+  // drop：1〜32フレームだけ再生（やや早め）
   const { containerRef: dropRef } = useLottieOnce(
     phase === "drop" ? dropData : null,
     {
       loop: false,
-      speed: 0.8,          // ちょい早め（そのままでもOK）
-      forceCanvas: true,   // Chrome / Insta / Android では canvas
-      dpr: 1,              // 内部解像度 1（軽量）
+      speed: 0.8,
       destroyOnComplete: true,
-      segment: [1, 32],    // ★ ここが「1〜32まで」
+      segment: [1, 32],
       onComplete: () => setPhase("wave"),
     }
   );
@@ -197,17 +170,18 @@ export default function IntroOverlay() {
     phase === "wave" ? waveData : null,
     {
       loop: false,
-      speed: 0.9,          // ★ ちょっとだけスロー
+      speed: 0.9,
       onComplete: () => setPhase("coffee"),
     }
   );
 
   // coffee：さらに少しだけスロー
+  // ★ fade フェーズでも animationData を渡し続けることで最後まで表示したままにする
   const { containerRef: coffeeRef } = useLottieOnce(
-    phase === "coffee" || phase === "linger" ? coffeeData : null,
+    phase === "coffee" || phase === "linger" || phase === "fade" ? coffeeData : null,
     {
       loop: false,
-      speed: 0.85,         // ★ wave より少しゆっくり
+      speed: 0.85,
     }
   );
 
@@ -267,17 +241,17 @@ export default function IntroOverlay() {
         className="fixed inset-0 z-[999] flex items-center justify-center cursor-pointer overflow-hidden"
         style={{
           background:
-            phase === "coffee" || phase === "linger"
+            phase === "coffee" || phase === "linger" || phase === "fade"
               ? "linear-gradient(135deg, #faf8f5 0%, #f5f1eb 50%, #faf8f5 100%)"
               : "#ffffff",
         }}
         onClick={() => setShow(false)}
       >
         {/* テクスチャ */}
-        {(phase === "coffee" || phase === "linger") && (
+        {(phase === "coffee" || phase === "linger" || phase === "fade") && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.04 }}
+            animate={{ opacity: isFade ? 0 : 0.04 }}
             transition={{ duration: 1.2 }}
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -306,11 +280,10 @@ export default function IntroOverlay() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.4 }}
               className="absolute inset-0 flex items-center justify-center"
-              style={{ transform: "scale(1.0)" }} // 見た目の拡大は外側だけ
+              style={{ transform: "scale(1.0)" }}
             >
               <div
                 ref={dropRef}
-                // 内部解像度 dpr=1 前提で 70%くらいの実サイズ
                 style={{ width: "70vw", height: "70vh" }}
                 aria-hidden
               />
@@ -332,11 +305,14 @@ export default function IntroOverlay() {
             </motion.div>
           )}
 
-          {/* COFFEE / LINGER フェーズ */}
-          {(phase === "coffee" || phase === "linger") && (
+          {/* COFFEE / LINGER / FADE フェーズ */}
+          {(phase === "coffee" || phase === "linger" || phase === "fade") && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{
+                opacity: isFade ? 0 : 1,
+                scale: isFade ? 0.98 : 1,
+              }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{
                 duration: isFade ? 1.5 : 0.8,
@@ -346,7 +322,7 @@ export default function IntroOverlay() {
             >
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
+                animate={{ opacity: isFade ? 0 : 1, y: isFade ? 10 : 0 }}
                 transition={{ delay: 0.2, duration: 0.9, ease: "easeOut" }}
               >
                 <div ref={coffeeRef} style={{ width: 320, height: 320 }} aria-hidden />
@@ -355,7 +331,7 @@ export default function IntroOverlay() {
               {/* テキスト群 */}
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: isFade ? 0 : 1 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="mt-6 text-center space-y-4"
               >
@@ -368,7 +344,7 @@ export default function IntroOverlay() {
 
                 <motion.div
                   initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
+                  animate={{ scaleX: isFade ? 0 : 1 }}
                   transition={{ delay: 0.5, duration: 0.5 }}
                   className="flex items-center justify-center gap-3"
                 >
@@ -379,7 +355,7 @@ export default function IntroOverlay() {
 
                 <motion.div
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  animate={{ opacity: isFade ? 0 : 1 }}
                   transition={{ delay: 0.7, duration: 0.8 }}
                   className="space-y-2 pt-2"
                 >
@@ -393,7 +369,7 @@ export default function IntroOverlay() {
 
                 <motion.p
                   initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  animate={{ opacity: isFade ? 0 : 1 }}
                   transition={{ delay: 1.0, duration: 0.7 }}
                   className="text-sm md:text-base text-gray-600 font-light tracking-wide mt-4"
                 >
@@ -404,7 +380,7 @@ export default function IntroOverlay() {
           )}
         </div>
 
-        {/* 進捗ドット（start抜きで4つ） */}
+        {/* 進捗ドット（drop / wave / coffee / linger） */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
           {(["drop", "wave", "coffee", "linger"] as Phase[]).map((p) => (
             <motion.div
