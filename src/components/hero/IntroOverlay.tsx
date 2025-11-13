@@ -1,16 +1,9 @@
 // src/components/hero/IntroOverlay.tsx
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
-import type { LottieRefCurrentProps } from "lottie-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import lottie, { type AnimationItem } from "lottie-web";
 import { motion, AnimatePresence } from "framer-motion";
-
-// 動的インポート（SSR無効）
-const Lottie = dynamic(() => import("lottie-react"), {
-  ssr: false,
-  loading: () => null,
-});
 
 // アニメーションJSON
 import dropAnim from "@/animations/drop-oil.json";
@@ -28,38 +21,92 @@ const TIMINGS = {
   fade: 1500,
 } as const;
 
+const isIGWebView = () =>
+  typeof navigator !== "undefined" &&
+  /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
+
+const shouldUseCanvas = () =>
+  typeof navigator !== "undefined" &&
+  (isIGWebView() || /Android|Chrome/i.test(navigator.userAgent));
+
+function useLottieOnce(
+  animationData: object | null,
+  opts?: {
+    speed?: number;
+    loop?: boolean;
+    autoplay?: boolean;
+  }
+) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const animRef = useRef<AnimationItem | null>(null);
+
+  useEffect(() => {
+    if (!animationData || !containerRef.current) return;
+
+    const renderer = shouldUseCanvas() ? "canvas" : "svg";
+    const anim = lottie.loadAnimation({
+      container: containerRef.current,
+      renderer: renderer as "svg" | "canvas",
+      loop: opts?.loop ?? false,
+      autoplay: opts?.autoplay ?? true,
+      animationData,
+      rendererSettings: {
+        progressiveLoad: true,
+        hideOnTransparent: true,
+        clearCanvas: true,
+        // @ts-ignore  高DPR過描画を抑制
+        dpr: Math.min(window.devicePixelRatio || 1, 2),
+        preserveAspectRatio: "xMidYMid meet",
+      },
+    });
+
+    // サブフレーム補間オフ（環境差のブレ軽減）
+    // @ts-ignore
+    anim.setSubframe?.(false);
+    if (opts?.speed) anim.setSpeed(opts.speed);
+
+    const onVisibility = () => {
+      if (document.hidden) anim.pause();
+      else anim.play();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    animRef.current = anim;
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      anim.destroy();
+      animRef.current = null;
+    };
+  }, [animationData, opts?.loop, opts?.autoplay, opts?.speed]);
+
+  return { containerRef, animRef };
+}
+
 export default function IntroOverlay() {
   const [phase, setPhase] = useState<Phase>("start");
-  const [show, setShow] = useState(false); // ← 最初は非表示
+  const [show, setShow] = useState(false);
 
-  const dropRef = useRef<LottieRefCurrentProps>(null);
-  const waveRef = useRef<LottieRefCurrentProps>(null);
-  const coffeeRef = useRef<LottieRefCurrentProps>(null);
+  // JSONをメモ化（Phase切替で再初期化しないように）
+  const dropData = useMemo(() => dropAnim, []);
+  const waveData = useMemo(() => waveAnim, []);
+  const coffeeData = useMemo(() => coffeeAnim, []);
 
-  // ✅ 「1セッション中に1回だけ表示」ロジック
+  // 1セッション1回だけ表示
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // モーション控えめ設定の人は最初からスキップ
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    // sessionStorage にフラグがあれば同セッション中は出さない
     const seen = window.sessionStorage.getItem("kcc_intro_seen");
-    if (seen === "1") {
-      return;
-    }
+    if (seen === "1") return;
 
-    // 初回だけ表示してフラグを立てる
     window.sessionStorage.setItem("kcc_intro_seen", "1");
     setShow(true);
   }, []);
 
-  // フェーズ遷移
+  // フェーズ遷移（元のタイミングを踏襲）
   useEffect(() => {
     if (!show) return;
-
     let t: ReturnType<typeof setTimeout> | null = null;
 
     switch (phase) {
@@ -67,15 +114,9 @@ export default function IntroOverlay() {
         t = setTimeout(() => setPhase("drop"), TIMINGS.start);
         break;
       case "drop":
-        if (dropRef.current?.animationItem?.setSpeed) {
-          dropRef.current.animationItem.setSpeed(2.0);
-        }
         t = setTimeout(() => setPhase("wave"), TIMINGS.drop);
         break;
       case "wave":
-        if (waveRef.current?.play) {
-          waveRef.current.play();
-        }
         t = setTimeout(() => setPhase("coffee"), TIMINGS.wave);
         break;
       case "coffee":
@@ -94,7 +135,7 @@ export default function IntroOverlay() {
     };
   }, [phase, show]);
 
-  // 万が一フリーズしても強制終了（保険）
+  // 保険（総時間超えで強制終了）
   useEffect(() => {
     if (!show) return;
     const totalTime = Object.values(TIMINGS).reduce((a, b) => a + b, 0);
@@ -105,16 +146,35 @@ export default function IntroOverlay() {
   // ESC / Space でスキップ
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" || e.key === " ") {
-        setShow(false);
-      }
+      if (e.key === "Escape" || e.key === " ") setShow(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!show) return null;
+  // 各フェーズの Lottie 初期化（1回再生）
+  const { containerRef: dropRef } = useLottieOnce(phase === "drop" ? dropData : null, {
+    loop: false,
+    autoplay: true,
+    speed: 2.0, // 元コード相当（ドロップ速め）
+  });
 
+  const { containerRef: waveRef } = useLottieOnce(phase === "wave" ? waveData : null, {
+    loop: false,
+    autoplay: true,
+    speed: 1.0,
+  });
+
+  const { containerRef: coffeeRef } = useLottieOnce(
+    phase === "coffee" || phase === "linger" ? coffeeData : null,
+    {
+      loop: false,
+      autoplay: true,
+      speed: 0.9, // わずかに軽く
+    }
+  );
+
+  if (!show) return null;
   const isFade = phase === "fade";
 
   return (
@@ -171,13 +231,10 @@ export default function IntroOverlay() {
               transition={{ duration: 0.4 }}
               className="absolute inset-0 flex items-center justify-center"
             >
-              <Lottie
-                lottieRef={dropRef}
-                animationData={dropAnim}
-                loop={false}
-                autoplay
-                // ⬇ transform: "scale(1.5)" を削除（ブラウザ差が出やすいので）
+              <div
+                ref={dropRef}
                 style={{ width: "100vw", height: "100vh" }}
+                aria-hidden
               />
             </motion.div>
           )}
@@ -192,13 +249,7 @@ export default function IntroOverlay() {
               className="absolute flex items-center justify-center"
             >
               <div style={{ width: 500, height: 500 }}>
-                <Lottie
-                  lottieRef={waveRef}
-                  animationData={waveAnim}
-                  loop={false}
-                  autoplay
-                  style={{ width: "100%", height: "100%" }}
-                />
+                <div ref={waveRef} style={{ width: "100%", height: "100%" }} aria-hidden />
               </div>
             </motion.div>
           )}
@@ -220,16 +271,10 @@ export default function IntroOverlay() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.9, ease: "easeOut" }}
               >
-                <Lottie
-                  lottieRef={coffeeRef}
-                  animationData={coffeeAnim}
-                  loop={false}
-                  autoplay
-                  style={{ width: 320, height: 320 }}
-                />
+                <div ref={coffeeRef} style={{ width: 320, height: 320 }} aria-hidden />
               </motion.div>
 
-              {/* テキスト群 */}
+              {/* テキスト群（元のまま） */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -303,5 +348,3 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
-
-
