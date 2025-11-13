@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import lottie, { type AnimationItem } from "lottie-web";
 import { motion, AnimatePresence } from "framer-motion";
 
-// アニメーションJSON
 import dropAnim from "@/animations/drop-oil.json";
 import waveAnim from "@/animations/wave-variant.json";
 import coffeeAnim from "@/animations/coffee.json";
@@ -14,30 +13,32 @@ type Phase = "start" | "drop" | "wave" | "coffee" | "linger" | "fade";
 
 const TIMINGS = {
   start: 800,
-  // drop と wave は Lottie の complete イベントで遷移
   coffee: 3000,
   linger: 1200,
   fade: 1500,
 } as const;
 
-// ===== 環境判定（SafariはSVG、IG/Chrome/Androidはcanvas推奨） =====
+// ---- UA 判定 ----
 const isIGWebView = () =>
-  typeof navigator !== "undefined" &&
-  /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
-
+  typeof navigator !== "undefined" && /Instagram|FBAN|FBAV/i.test(navigator.userAgent);
 const isSafari = () =>
   typeof navigator !== "undefined" &&
   /Safari/i.test(navigator.userAgent) &&
   !/Chrome|CriOS|Chromium/i.test(navigator.userAgent);
-
 const shouldUseCanvas = () =>
   typeof navigator !== "undefined" &&
   (isIGWebView() || /Android|Chrome|CriOS/i.test(navigator.userAgent));
 
-// ===== Lottie 初期化（StrictMode二重実行/自動再生暴走を防ぐ） =====
+/**
+ * Lottieを1回だけ安全に初期化して、イベントも内側で管理
+ */
 function useLottieOnce(
   animationData: object | null,
-  opts?: { speed?: number; loop?: boolean }
+  opts?: {
+    speed?: number;
+    loop?: boolean;
+    onComplete?: () => void; // ← ここで完了遷移を受ける
+  }
 ) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const animRef = useRef<AnimationItem | null>(null);
@@ -45,11 +46,14 @@ function useLottieOnce(
 
   useEffect(() => {
     if (!animationData || !containerRef.current) return;
-    if (initializedRef.current) return; // StrictMode 2回目対策
+
+    // StrictModeの二重実行を抑止
+    if (initializedRef.current) return;
     initializedRef.current = true;
 
-    const renderer: "svg" | "canvas" = isSafari() ? "svg" : (shouldUseCanvas() ? "canvas" : "svg");
+    let disposed = false;
 
+    const renderer: "svg" | "canvas" = isSafari() ? "svg" : (shouldUseCanvas() ? "canvas" : "svg");
     const anim = lottie.loadAnimation({
       container: containerRef.current,
       renderer,
@@ -60,39 +64,58 @@ function useLottieOnce(
         progressiveLoad: true,
         hideOnTransparent: true,
         clearCanvas: true,
-        // @ts-ignore 高DPRでの過描画を抑制
+        // @ts-ignore
         dpr: Math.min(window.devicePixelRatio || 1, 2),
         preserveAspectRatio: "xMidYMid meet",
       },
     });
 
-    // 環境差のブレ軽減
     // @ts-ignore
     anim.setSubframe?.(false);
 
     const onDOM = () => {
-      anim.goToAndStop(0, true); // 必ず0フレームから
+      if (disposed) return;
+      anim.goToAndStop(0, true);
       if (opts?.speed) anim.setSpeed(opts.speed);
       anim.play();
     };
-    anim.addEventListener("DOMLoaded", onDOM);
 
     const onVisibility = () => {
+      if (disposed) return;
       if (document.hidden) anim.pause();
       else anim.play();
     };
-    document.addEventListener("visibilitychange", onVisibility);
+
+    const onComplete = () => {
+      if (disposed) return;
+      opts?.onComplete?.();
+    };
+
+    // --- ここから try/guard で安全にハンドラ登録 ---
+    try {
+      anim.addEventListener("DOMLoaded", onDOM);
+      anim.addEventListener("complete", onComplete);
+      document.addEventListener("visibilitychange", onVisibility);
+    } catch {
+      // 何もしない（destroy後の呼び出し防止）
+    }
 
     animRef.current = anim;
 
     return () => {
-      anim.removeEventListener("DOMLoaded", onDOM);
+      disposed = true;
+      try {
+        anim.removeEventListener("DOMLoaded", onDOM);
+        anim.removeEventListener("complete", onComplete);
+      } catch {}
       document.removeEventListener("visibilitychange", onVisibility);
-      anim.destroy();
+      try {
+        anim.destroy();
+      } catch {}
       animRef.current = null;
-      initializedRef.current = false; // 次フェーズで再利用可能に戻す
+      initializedRef.current = false; // 次のフェーズで再利用可
     };
-  }, [animationData, opts?.loop, opts?.speed]);
+  }, [animationData, opts?.loop, opts?.speed, opts?.onComplete]);
 
   return { containerRef, animRef };
 }
@@ -101,66 +124,36 @@ export default function IntroOverlay() {
   const [phase, setPhase] = useState<Phase>("start");
   const [show, setShow] = useState(false);
 
-  // JSON メモ化（フェーズ切替で再初期化しない）
   const dropData = useMemo(() => dropAnim, []);
   const waveData = useMemo(() => waveAnim, []);
   const coffeeData = useMemo(() => coffeeAnim, []);
 
-  // 1セッション1回だけ表示
+  // 1セッション1回
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    const seen = window.sessionStorage.getItem("kcc_intro_seen");
-    if (seen === "1") return;
-
+    if (window.sessionStorage.getItem("kcc_intro_seen") === "1") return;
     window.sessionStorage.setItem("kcc_intro_seen", "1");
     setShow(true);
   }, []);
 
-  // ===== 各フェーズの Lottie 初期化 =====
-  const {
-    containerRef: dropRef,
-    animRef: dropAnimRef,
-  } = useLottieOnce(phase === "drop" ? dropData : null, {
-    loop: false,
-    // 2.0だと初速が暴れやすいので少し抑える
-    speed: 1.4,
-  });
+  // ---- 各フェーズ（完了遷移は hook 内 onComplete）----
+  const { containerRef: dropRef } = useLottieOnce(
+    phase === "drop" ? dropData : null,
+    { loop: false, speed: 1.4, onComplete: () => setPhase("wave") }
+  );
 
-  const {
-    containerRef: waveRef,
-    animRef: waveAnimRef,
-  } = useLottieOnce(phase === "wave" ? waveData : null, {
-    loop: false,
-    speed: 0.95,
-  });
+  const { containerRef: waveRef } = useLottieOnce(
+    phase === "wave" ? waveData : null,
+    { loop: false, speed: 0.95, onComplete: () => setPhase("coffee") }
+  );
 
   const { containerRef: coffeeRef } = useLottieOnce(
     phase === "coffee" || phase === "linger" ? coffeeData : null,
     { loop: false, speed: 0.9 }
   );
 
-  // ===== 完了イベントで遷移（drop -> wave, wave -> coffee）=====
-  useEffect(() => {
-    if (phase !== "drop") return;
-    const a = dropAnimRef.current;
-    if (!a) return;
-    const onComplete = () => setPhase("wave");
-    a.addEventListener("complete", onComplete);
-    return () => a.removeEventListener("complete", onComplete);
-  }, [phase, dropAnimRef]);
-
-  useEffect(() => {
-    if (phase !== "wave") return;
-    const a = waveAnimRef.current;
-    if (!a) return;
-    const onComplete = () => setPhase("coffee");
-    a.addEventListener("complete", onComplete);
-    return () => a.removeEventListener("complete", onComplete);
-  }, [phase, waveAnimRef]);
-
-  // ===== タイマー遷移は後半のみ（coffee -> linger -> fade -> close）=====
+  // 後半は時間で遷移
   useEffect(() => {
     if (!show) return;
     let t: ReturnType<typeof setTimeout> | null = null;
@@ -178,16 +171,14 @@ export default function IntroOverlay() {
         t = setTimeout(() => setShow(false), TIMINGS.fade);
         break;
     }
-    return () => {
-      if (t) clearTimeout(t);
-    };
+    return () => { if (t) clearTimeout(t); };
   }, [phase, show]);
 
   // 保険（総時間超えで強制終了）
   useEffect(() => {
     if (!show) return;
-    const totalTime = TIMINGS.start + TIMINGS.coffee + TIMINGS.linger + TIMINGS.fade + 500;
-    const killer = setTimeout(() => setShow(false), totalTime);
+    const total = TIMINGS.start + TIMINGS.coffee + TIMINGS.linger + TIMINGS.fade + 500;
+    const killer = setTimeout(() => setShow(false), total);
     return () => clearTimeout(killer);
   }, [show]);
 
@@ -245,7 +236,7 @@ export default function IntroOverlay() {
 
         {/* 本体 */}
         <div className="relative w-full h-full flex items-center justify-center">
-          {/* DROP フェーズ（コンテナには transform を掛けない） */}
+          {/* DROP */}
           {phase === "drop" && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -258,7 +249,7 @@ export default function IntroOverlay() {
             </motion.div>
           )}
 
-          {/* WAVE フェーズ（scaleは外側のmotionにのみ） */}
+          {/* WAVE（scaleは外側のみ） */}
           {phase === "wave" && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -273,7 +264,7 @@ export default function IntroOverlay() {
             </motion.div>
           )}
 
-          {/* COFFEE / LINGER フェーズ */}
+          {/* COFFEE / LINGER */}
           {(phase === "coffee" || phase === "linger") && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
@@ -293,7 +284,6 @@ export default function IntroOverlay() {
                 <div ref={coffeeRef} style={{ width: 320, height: 320 }} aria-hidden />
               </motion.div>
 
-              {/* テキスト群 */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -367,4 +357,3 @@ export default function IntroOverlay() {
     </AnimatePresence>
   );
 }
-
