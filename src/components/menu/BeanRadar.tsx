@@ -4,8 +4,8 @@ import type { MenuBean } from "@/lib/menu";
 
 const JP: Record<keyof MenuBean["radar"], string> = {
   acidity: "酸味",
-  sweetness: "甘み",
-  body: "コク",
+  sweetness: "甘味",
+  body: "口当たり",
   aroma: "香り",
   aftertaste: "余韻",
 };

@@ -14,7 +14,7 @@ import KccCard from "@/components/kcc/KccCard";
 import { KccGrid } from "@/components/kcc/KccGrid";
 import { KccTag } from "@/components/kcc/KccTag";
 import BeanDialog from "@/components/menu/BeanDialog";
-import { Sparkles, Coffee, Award, Flame, Sun } from "lucide-react";
+import { Sparkles, Coffee, Award, Flame, Sun, Package } from "lucide-react";
 
 const CARD_W = "w-[280px]";
 
@@ -366,22 +366,84 @@ export default function MenuClient() {
 
       {/* 🧇 ワッフル */}
       <section className="mb-12">
-        <h2 className="text-2xl font-bold mb-4">Waffle</h2>
-        <KccCard
-          title={WAFFLE.name}
-          description={WAFFLE.description ?? ""}
-          image={{ src: safePhoto(WAFFLE.photo), alt: WAFFLE.name, ratio: "16/9" }}
-          footer={
-            <>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 text-xs font-semibold">
-                {WAFFLE.price}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">🧇</span>
+          <h2 className="text-2xl font-bold">Waffle</h2>
+          <span className="text-sm text-muted-foreground">単品・セット対応</span>
+        </div>
+        
+        {/* ワッフルカード */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* ワッフル単品 */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xl font-bold text-gray-900">ベルギーワッフル（単品）</h3>
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-pink-100 text-pink-800 text-sm font-bold">
+                ¥400
               </span>
-              {WAFFLE.flavor.map((f) => (
-                <KccTag key={f}>{f}</KccTag>
-              ))}
-            </>
-          }
-        />
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              コーヒーにぴったりの焼きたてワッフル。バターの風味とはちみつの甘さが絶妙。
+            </p>
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-700">
+                ハーフサイズ（2種類選択可）：
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <KccTag>プレーン</KccTag>
+                <KccTag>抹茶</KccTag>
+                <KccTag>チョコ</KccTag>
+                <KccTag>ストロベリー</KccTag>
+              </div>
+            </div>
+          </div>
+
+          {/* セットメニュー */}
+          <div className="rounded-2xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50 p-6 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">コーヒー＆ワッフルセット</h3>
+                <p className="text-xs text-amber-700 mt-1 font-medium">
+                  <Package className="h-3 w-3 inline mr-1" />
+                  ¥50お得！
+                </p>
+              </div>
+              <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-amber-200 text-amber-900 text-sm font-bold">
+                ¥850
+              </span>
+            </div>
+            <div className="space-y-3">
+              <div className="text-sm text-gray-700">
+                <strong>セット内容：</strong>
+              </div>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 mt-0.5">▶</span>
+                  <span>コーヒー1杯（Normal 全6種類から選択）</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 mt-0.5">▶</span>
+                  <span>ワッフル ハーフサイズ1種類</span>
+                </li>
+              </ul>
+              <div className="text-xs text-gray-500 pt-2 border-t">
+                ※ Special（Colombia Milan Culturing NG）はセット対象外です
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* モバイル用の価格まとめ */}
+        <div className="md:hidden mt-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-600">
+          <div className="flex justify-between">
+            <span>単品合計</span>
+            <span>¥1,100</span>
+          </div>
+          <div className="flex justify-between font-bold text-amber-700">
+            <span>セット価格</span>
+            <span>¥850</span>
+          </div>
+        </div>
       </section>
 
       {/* 詳細ダイアログ */}
@@ -409,4 +471,3 @@ export default function MenuClient() {
     </main>
   );
 }
-

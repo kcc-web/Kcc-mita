@@ -157,7 +157,7 @@ export const BEANS: MenuBean[] = [
     },
     process: "Blend",
     altitude: "-",
-    description: "深煎りの豊かなコクとカカオの香ばしさ。カラメルとローストナッツの調和が生み出す安心の一杯。",
+    description: "深煎りの豊かな口当たりとカカオの香ばしさ。カラメルとローストナッツの調和が生み出す安心の一杯。",
     category: "normal",
     roaster: "Papelburg",
     roastLevel: "深煎り",
