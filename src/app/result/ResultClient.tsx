@@ -140,25 +140,40 @@ export default function ResultClient({ initial }: { initial: Initial }) {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="flex flex-col"
           >
-            {/* コーヒー画像 */}
-            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-lg mb-4">
+            {/* コーヒー画像（ラベル付き） */}
+            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-lg mb-4 group">
               <Image
                 src={photoSrc}
                 alt={picked.beanName}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-700 group-hover:scale-105"
                 sizes="(max-width: 768px) 100vw, 50vw"
                 priority
               />
+              {/* グラデーションオーバーレイ */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              
+              {/* 「おすすめのコーヒー」ラベル */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.5 }}
+                className="absolute top-4 left-4 z-10"
+              >
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/90 backdrop-blur-sm border border-pink-200 px-3 py-1.5 shadow-lg">
+                  <Coffee className="h-4 w-4 text-pink-600" />
+                  <span className="text-sm font-bold text-gray-900">おすすめのコーヒー</span>
+                </div>
+              </motion.div>
             </div>
 
             {/* コーヒー情報 */}
-            <div className="flex-1 space-y-4">
-              <div className="flex items-center gap-2">
-                <Coffee className="h-5 w-5 text-pink-600" />
-                <h2 className="text-xl font-bold">おすすめのコーヒー</h2>
-              </div>
-
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5, duration: 0.5 }}
+              className="flex-1 space-y-4"
+            >
               <div className="rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-white to-pink-50/30 p-4 shadow-md">
                 <h3 className="text-lg font-bold text-gray-900 mb-2">
                   {picked.beanName}
@@ -168,30 +183,48 @@ export default function ResultClient({ initial }: { initial: Initial }) {
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   {picked.roast && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
+                    <motion.span
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.6, duration: 0.3 }}
+                      className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium"
+                    >
                       {picked.roast}
-                    </span>
+                    </motion.span>
                   )}
                   {picked.price && (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium">
+                    <motion.span
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.7, duration: 0.3 }}
+                      className="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium"
+                    >
                       {picked.price}
-                    </span>
+                    </motion.span>
                   )}
-                  {picked.tags.map((t) => (
-                    <span
+                  {picked.tags.map((t, i) => (
+                    <motion.span
                       key={t}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ delay: 0.8 + i * 0.1, duration: 0.3 }}
                       className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
                     >
                       {t}
-                    </span>
+                    </motion.span>
                   ))}
                 </div>
               </div>
 
-              <p className="text-xs text-gray-600 text-center">
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1, duration: 0.5 }}
+                className="text-xs text-gray-600 text-center"
+              >
                 メニューページで、この豆がハイライト表示されます
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
           </motion.div>
         </div>
       </section>
