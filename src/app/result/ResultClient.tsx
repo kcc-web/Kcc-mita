@@ -70,6 +70,7 @@ export default function ResultClient({ initial }: { initial: Initial }) {
 
   const picked = useMemo(() => pickBeanType(scores), [scores]);
   const photoSrc = resolveImage(picked.beanId, picked.fallbackImage);
+  const characterSrc = `/characters/${picked.key}.jpg`;
 
   useEffect(() => {
     if (picked?.beanId) {
@@ -101,6 +102,99 @@ export default function ResultClient({ initial }: { initial: Initial }) {
           {picked.tagline}
         </p>
       </header>
+
+      {/* キャラクター画像 + コーヒー豆カードの統合セクション */}
+      <section className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* キャラクター画像（スマホで上に配置） */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="relative aspect-square md:aspect-[4/5] overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-white to-amber-50 shadow-xl border-2 border-pink-100"
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-white/40 via-transparent to-transparent pointer-events-none z-10" />
+            <Image
+              src={characterSrc}
+              alt={`${picked.typeName}のキャラクター`}
+              fill
+              className="object-contain p-6 md:p-8"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+            
+            {/* タイプ名バッジ */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/90 backdrop-blur-sm border border-pink-200 px-4 py-2 shadow-lg">
+                <span className="text-sm font-bold bg-gradient-to-r from-pink-600 to-amber-600 bg-clip-text text-transparent">
+                  {picked.typeName}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* コーヒー豆情報カード */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="flex flex-col"
+          >
+            {/* コーヒー画像 */}
+            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-lg mb-4">
+              <Image
+                src={photoSrc}
+                alt={picked.beanName}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            </div>
+
+            {/* コーヒー情報 */}
+            <div className="flex-1 space-y-4">
+              <div className="flex items-center gap-2">
+                <Coffee className="h-5 w-5 text-pink-600" />
+                <h2 className="text-xl font-bold">おすすめのコーヒー</h2>
+              </div>
+
+              <div className="rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-white to-pink-50/30 p-4 shadow-md">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">
+                  {picked.beanName}
+                </h3>
+                <p className="text-sm text-gray-600 leading-relaxed mb-3">
+                  {picked.desc}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  {picked.roast && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
+                      {picked.roast}
+                    </span>
+                  )}
+                  {picked.price && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium">
+                      {picked.price}
+                    </span>
+                  )}
+                  {picked.tags.map((t) => (
+                    <span
+                      key={t}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <p className="text-xs text-gray-600 text-center">
+                メニューページで、この豆がハイライト表示されます
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
       {/* ========== 教室での体験セクション（修正版） ========== */}
       <section className="mb-6 rounded-2xl border-2 border-pink-300 bg-gradient-to-br from-pink-50 via-white to-orange-50 p-4 md:p-6 shadow-xl relative overflow-hidden">
@@ -271,104 +365,47 @@ export default function ResultClient({ initial }: { initial: Initial }) {
         </div>
       </section>
 
-      {/* コーヒー画像 */}
+      {/* 味覚プロファイル */}
       <section className="mb-6">
-        <div className="relative aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-xl">
-          <Image
-            src={photoSrc}
-            alt={picked.beanName}
-            fill
-            className="object-cover"
-            sizes="(max-width: 768px) 100vw, 80vw"
-            priority
+        <div className="flex items-center gap-2 mb-3">
+          <TrendingUp className="h-5 w-5 text-pink-600" />
+          <h2 className="text-xl font-bold">あなたの味覚プロファイル</h2>
+        </div>
+
+        <div className="rounded-2xl border bg-white p-4 md:p-5 shadow-sm space-y-4">
+          <FlavorBar
+            title="Brightness（明るさ）"
+            left="Deep"
+            right="Bright"
+            value={scores.brightness}
+            gradient="brightness"
+          />
+          
+          <FlavorBar
+            title="Texture（質感）"
+            left="sharp"
+            right="soft"
+            value={scores.texture}
+            gradient="texture"
+          />
+          
+          <FlavorBar
+            title="Sweetness（甘さ）"
+            left="Clean"
+            right="Sweet"
+            value={scores.sweetness}
+            gradient="sweetness"
+          />
+          
+          <FlavorBar
+            title="Aroma（香り）"
+            left="Floral"
+            right="Fruity"
+            value={scores.aroma}
+            gradient="aroma"
           />
         </div>
       </section>
-
-      {/* おすすめのコーヒー */}
-      <section className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <Coffee className="h-5 w-5 text-pink-600" />
-          <h2 className="text-xl font-bold">あなたにおすすめのコーヒー</h2>
-        </div>
-
-        <div className="rounded-2xl border-2 border-pink-200 bg-gradient-to-br from-white to-pink-50/30 p-4 md:p-5 shadow-md">
-          <h3 className="text-lg font-bold text-gray-900 mb-2">
-            {picked.beanName}
-          </h3>
-          <p className="text-sm text-gray-600 leading-relaxed mb-3">
-            {picked.desc}
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            {picked.roast && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
-                {picked.roast}
-              </span>
-            )}
-            {picked.price && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium">
-                {picked.price}
-              </span>
-            )}
-            {picked.tags.map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-xs text-gray-600 mt-2 text-center">
-          メニューページで、この豆がハイライト表示されます
-        </p>
-      </section>
-
-      {/* 味覚プロファイル */}
-<section className="mb-6">
-  <div className="flex items-center gap-2 mb-3">
-    <TrendingUp className="h-5 w-5 text-pink-600" />
-    <h2 className="text-xl font-bold">あなたの味覚プロファイル</h2>
-  </div>
-
-  <div className="rounded-2xl border bg-white p-4 md:p-5 shadow-sm space-y-4">
-    {/* ✅ 修正：左右を入れ替え */}
-    <FlavorBar
-      title="Brightness（明るさ）"
-      left="Deep"          // 深煎り・重厚（低スコア）
-      right="Bright"       // 明るい・爽やか（高スコア）
-      value={scores.brightness}
-      gradient="brightness"
-    />
-    
-    {/* ✅ 他の軸も確認 */}
-    <FlavorBar
-      title="Texture（質感）"
-      left="sharp"          // 柔らかい（低スコア）
-      right="soft"        // 鋭い・クリア（高スコア）
-      value={scores.texture}
-      gradient="texture"
-    />
-    
-    <FlavorBar
-      title="Sweetness（甘さ）"
-      left="Clean"         // クリーン・ドライ（低スコア）
-      right="Sweet"        // 甘い（高スコア）
-      value={scores.sweetness}
-      gradient="sweetness"
-    />
-    
-    <FlavorBar
-      title="Aroma（香り）"
-      left="Floral"        // フローラル（低スコア）
-      right="Fruity"       // フルーティ（高スコア）
-      value={scores.aroma}
-      gradient="aroma"
-    />
-  </div>
-</section>
 
       {/* このタイプの特徴（折りたたみ可能に） */}
       <details className="mb-6 rounded-2xl border bg-gradient-to-br from-white to-pink-50/20 shadow-sm overflow-hidden">
