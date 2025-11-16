@@ -11,6 +11,7 @@ export default function NavLinks() {
     { href: "/menu", label: "Menu" }, // ← 常に表示
     { href: "/quiz/intro", label: "診断" },
     { href: "/contact", label: "Contact" },
+    { href: "/access", label: "Access" },
   ];
 
   return (
