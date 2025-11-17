@@ -336,6 +336,10 @@ export default function AccessClient() {
                 <li className="flex items-start gap-2">
                   <span className="text-amber-600 mt-0.5">•</span>
                   <span>教室内での飲食は可能です。ごゆっくりお過ごしください。</span>
+                 </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-600 mt-0.5">•</span>
+                  <span>お支払いは現金のみとなります。ご了承ください。</span>
                 </li>
               </ul>
             </div>
