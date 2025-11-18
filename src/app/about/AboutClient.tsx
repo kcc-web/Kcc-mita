@@ -37,173 +37,59 @@ export type Activity = {
 
 export default function AboutClient({ activities }: { activities: Activity[] }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoState, setVideoState] = useState<'loading' | 'playing' | 'error' | 'fallback'>('loading');
-  const [isMobile, setIsMobile] = useState(false);
+  const [useVideo, setUseVideo] = useState(true);
 
+  // 動画のオートプレイ + タブ戻り時に再生し直すだけのシンプル実装
   useEffect(() => {
-    // モバイル判定
-    const checkMobile = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
-      const mobileKeywords = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
-      const touchPoints = navigator.maxTouchPoints > 0;
-      return mobileKeywords.test(userAgent) || touchPoints;
-    };
-
-    setIsMobile(checkMobile());
-
     const video = videoRef.current;
     if (!video) return;
 
-    let playAttempts = 0;
-    const maxAttempts = 3;
-
-    // 動画再生を試みる関数
-    const attemptPlay = async () => {
-      if (!video || playAttempts >= maxAttempts) {
-        setVideoState('fallback');
-        return;
+    const tryPlay = () => {
+      if (!video) return;
+      if (video.paused) {
+        video
+          .play()
+          .then(() => {
+            if (process.env.NODE_ENV === "development") {
+              console.log("Hero video playing");
+            }
+          })
+          .catch((err) => {
+            if (process.env.NODE_ENV === "development") {
+              console.warn("Hero video autoplay blocked:", err);
+            }
+          });
       }
-
-      try {
-        playAttempts++;
-        
-        // モバイルの場合は特別な処理
-        if (isMobile) {
-          // モバイルでは画質を下げて再生を優先
-          video.setAttribute('playsinline', 'true');
-          video.setAttribute('webkit-playsinline', 'true');
-          video.muted = true;
-          video.defaultMuted = true;
-          video.autoplay = true;
-        }
-
-        const playPromise = video.play();
-        
-        if (playPromise !== undefined) {
-          await playPromise;
-          setVideoState('playing');
-          console.log('Video playing successfully');
-        }
-      } catch (error) {
-        console.error(`Play attempt ${playAttempts} failed:`, error);
-        
-        // 再試行
-        if (playAttempts < maxAttempts) {
-          setTimeout(attemptPlay, 1000);
-        } else {
-          setVideoState('fallback');
-        }
-      }
-    };
-
-    // 動画の各種イベントハンドラー
-    const handleLoadedData = () => {
-      console.log('Video data loaded');
-      attemptPlay();
     };
 
     const handleCanPlay = () => {
-      console.log('Video can play');
-      if (videoState !== 'playing') {
-        attemptPlay();
-      }
+      tryPlay();
     };
 
     const handleError = (e: Event) => {
-      console.error('Video error:', e);
-      setVideoState('error');
+      console.error("Hero video error:", e);
+      setUseVideo(false); // だめだったら画像だけにフォールバック
     };
 
-    const handleStalled = () => {
-      console.log('Video stalled');
-      // ネットワークが遅い場合は画像にフォールバック
-      setTimeout(() => {
-        if (videoState === 'loading') {
-          setVideoState('fallback');
-        }
-      }, 5000);
-    };
-
-    const handlePlaying = () => {
-      setVideoState('playing');
-    };
-
-    const handlePause = () => {
-      // 意図しない一時停止の場合は再開を試みる
-      if (!document.hidden && videoState === 'playing') {
-        setTimeout(() => {
-          video.play().catch(() => {
-            console.log('Resume failed');
-          });
-        }, 100);
-      }
-    };
-
-    // ユーザーインタラクションで再生を試みる（モバイル対策）
-    const handleUserInteraction = () => {
-      if (video.paused && videoState !== 'fallback') {
-        attemptPlay();
-      }
-    };
-
-    // イベントリスナー登録
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('error', handleError);
-    video.addEventListener('stalled', handleStalled);
-    video.addEventListener('playing', handlePlaying);
-    video.addEventListener('pause', handlePause);
-
-    // モバイルでのユーザーインタラクション対応
-    if (isMobile) {
-      document.addEventListener('touchstart', handleUserInteraction, { once: true });
-      document.addEventListener('click', handleUserInteraction, { once: true });
-    }
-
-    // タブ切り替え対応
     const handleVisibilityChange = () => {
-      if (!document.hidden && video.paused && videoState === 'playing') {
-        attemptPlay();
+      if (!document.hidden) {
+        tryPlay();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    // 初回読み込みタイムアウト（10秒で諦める）
-    const loadTimeout = setTimeout(() => {
-      if (videoState === 'loading') {
-        console.log('Video load timeout, falling back to image');
-        setVideoState('fallback');
-      }
-    }, 10000);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("error", handleError);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // クリーンアップ
+    // 初回も一応チャレンジ
+    tryPlay();
+
     return () => {
-      clearTimeout(loadTimeout);
-      if (video) {
-        video.removeEventListener('loadeddata', handleLoadedData);
-        video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('error', handleError);
-        video.removeEventListener('stalled', handleStalled);
-        video.removeEventListener('playing', handlePlaying);
-        video.removeEventListener('pause', handlePause);
-      }
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (isMobile) {
-        document.removeEventListener('touchstart', handleUserInteraction);
-        document.removeEventListener('click', handleUserInteraction);
-      }
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("error", handleError);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isMobile, videoState]);
-
-  // デバッグ情報を表示（開発時のみ）
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Video state:', videoState);
-      console.log('Is mobile:', isMobile);
-    }
-  }, [videoState, isMobile]);
-
-  const showVideo = videoState !== 'fallback' && videoState !== 'error';
+  }, []);
 
   return (
     <main className="relative">
@@ -211,7 +97,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
       <section className="relative h-[60vh] md:h-[70vh] overflow-hidden">
         {/* 背景 */}
         <div className="absolute inset-0">
-          {/* 常に画像を背景として配置（フォールバック兼初期表示） */}
+          {/* 画像（常に表示・フォールバック兼用） */}
           <Image
             src="/images/about/hero.jpg"
             alt="KCC Hero"
@@ -220,8 +106,8 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
             priority
           />
 
-          {/* 動画オーバーレイ（条件付き表示） */}
-          {showVideo && (
+          {/* 動画オーバーレイ（成功しているときだけ） */}
+          {useVideo && (
             <div className="absolute inset-0">
               <video
                 ref={videoRef}
@@ -230,29 +116,11 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
                 muted
                 loop
                 playsInline
-                webkit-playsinline="true"
-                x5-video-player-type="h5"
-                x5-video-player-fullscreen="true"
-                preload={isMobile ? "metadata" : "auto"}
+                preload="auto"
                 poster="/images/about/hero.jpg"
-                style={{ 
-                  // モバイルでのフルスクリーン対策
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover'
-                }}
               >
-                <source 
-                  src="/videos/about-hero.webm" 
-                  type="video/webm"
-                />
-                <source 
-                  src="/videos/about-hero.mp4" 
-                  type="video/mp4"
-                />
+                <source src="/videos/about-hero.webm" type="video/webm" />
+                <source src="/videos/about-hero.mp4" type="video/mp4" />
               </video>
             </div>
           )}
@@ -260,10 +128,10 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
           {/* 黒グラデーションのオーバーレイ */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
 
-          {/* デバッグ情報（開発時のみ） */}
-          {process.env.NODE_ENV === 'development' && (
+          {/* デバッグ（任意） */}
+          {process.env.NODE_ENV === "development" && (
             <div className="absolute top-4 left-4 bg-black/50 text-white text-xs p-2 rounded">
-              State: {videoState} | Mobile: {isMobile ? 'Yes' : 'No'}
+              Video: {useVideo ? "on" : "fallback (image only)"}
             </div>
           )}
         </div>
@@ -428,7 +296,6 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
           ))}
         </div>
 
-        {/* エレガントな締めくくり */}
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
