@@ -59,6 +59,24 @@ type PageStats = {
   count: number;
 };
 
+type HourlyStats = {
+  hour: string;
+  pageViews: number;
+  quizCompletions: number;
+};
+
+type DeviceStats = {
+  device: string;
+  count: number;
+  percentage: number;
+};
+
+type ReferrerStats = {
+  referrer: string;
+  count: number;
+  percentage: number;
+};
+
 type Analytics = {
   totalCount: number;
   typeDistribution: TypeDistribution[];
@@ -72,6 +90,11 @@ type Analytics = {
   completionRate: number;
   dailyStats: DailyStats[];
   topPages: PageStats[];
+  hourlyStats: HourlyStats[];
+  deviceStats: DeviceStats[];
+  referrerStats: ReferrerStats[];
+  avgSessionDuration: number;
+  bounceRate: number;
 };
 
 const COLORS = ["#ec4899", "#f43f5e", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"];
@@ -98,7 +121,7 @@ export default function AnalyticsPage() {
       // ページビューを取得
       const { data: pageViewData, error: pageViewError } = await supabase
         .from("page_views")
-        .select("page_path, created_at");
+        .select("page_path, created_at, user_agent, referrer");
 
       if (pageViewError) throw pageViewError;
 
@@ -113,6 +136,8 @@ export default function AnalyticsPage() {
       const pageViews = (pageViewData || []) as {
         page_path: string;
         created_at: string;
+        user_agent: string | null;
+        referrer: string | null;
       }[];
 
       const totalCount = rows.length;
@@ -299,6 +324,125 @@ export default function AnalyticsPage() {
       const completionRate =
         totalPageViews > 0 ? Math.round((totalCount / totalPageViews) * 100) : 0;
 
+      // --- 時間帯別統計 ---
+      const hourlyMap: Record<string, { pageViews: number; quizCompletions: number }> = {};
+
+      pageViews.forEach((pv) => {
+        const hour = new Date(pv.created_at).getHours();
+        const hourLabel = `${hour}:00`;
+        if (!hourlyMap[hourLabel]) {
+          hourlyMap[hourLabel] = { pageViews: 0, quizCompletions: 0 };
+        }
+        hourlyMap[hourLabel].pageViews += 1;
+      });
+
+      rows.forEach((row) => {
+        const hour = new Date(row.created_at).getHours();
+        const hourLabel = `${hour}:00`;
+        if (!hourlyMap[hourLabel]) {
+          hourlyMap[hourLabel] = { pageViews: 0, quizCompletions: 0 };
+        }
+        hourlyMap[hourLabel].quizCompletions += 1;
+      });
+
+      const hourlyStats: HourlyStats[] = Object.entries(hourlyMap)
+        .map(([hour, stats]) => ({
+          hour,
+          pageViews: stats.pageViews,
+          quizCompletions: stats.quizCompletions,
+        }))
+        .sort((a, b) => {
+          const hourA = parseInt(a.hour.split(":")[0]);
+          const hourB = parseInt(b.hour.split(":")[0]);
+          return hourA - hourB;
+        });
+
+      // --- デバイス別統計 ---
+      const deviceCounts: Record<string, number> = {};
+      
+      pageViews.forEach((pv) => {
+        const ua = pv.user_agent || "";
+        let device = "Unknown";
+        
+        if (/mobile/i.test(ua)) {
+          device = "Mobile";
+        } else if (/tablet|ipad/i.test(ua)) {
+          device = "Tablet";
+        } else if (ua) {
+          device = "Desktop";
+        }
+        
+        deviceCounts[device] = (deviceCounts[device] || 0) + 1;
+      });
+
+      const deviceStats: DeviceStats[] = Object.entries(deviceCounts)
+        .map(([device, count]) => ({
+          device,
+          count,
+          percentage: totalPageViews > 0 ? Math.round((count / totalPageViews) * 100) : 0,
+        }))
+        .sort((a, b) => b.count - a.count);
+
+      // --- リファラー別統計 ---
+      const referrerCounts: Record<string, number> = {};
+      
+      pageViews.forEach((pv) => {
+        let referrer = "Direct";
+        
+        if (pv.referrer) {
+          try {
+            const url = new URL(pv.referrer);
+            referrer = url.hostname.replace("www.", "");
+          } catch {
+            referrer = "Direct";
+          }
+        }
+        
+        referrerCounts[referrer] = (referrerCounts[referrer] || 0) + 1;
+      });
+
+      const referrerStats: ReferrerStats[] = Object.entries(referrerCounts)
+        .map(([referrer, count]) => ({
+          referrer,
+          count,
+          percentage: totalPageViews > 0 ? Math.round((count / totalPageViews) * 100) : 0,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // --- セッション時間とバウンス率（簡易版）---
+      // 同じページを5秒以内に連続アクセス = 同一セッション
+      const sessionDurations: number[] = [];
+      const sortedPageViews = [...pageViews].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      for (let i = 1; i < sortedPageViews.length; i++) {
+        const prevTime = new Date(sortedPageViews[i - 1].created_at).getTime();
+        const currTime = new Date(sortedPageViews[i].created_at).getTime();
+        const diff = (currTime - prevTime) / 1000; // 秒
+        
+        if (diff < 1800) { // 30分以内なら同一セッション
+          sessionDurations.push(diff);
+        }
+      }
+
+      const avgSessionDuration = sessionDurations.length > 0
+        ? Math.round(sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length)
+        : 0;
+
+      // バウンス率: 1ページだけ見て離脱した割合（簡易計算）
+      const singlePageSessions = pageViews.filter((pv, idx, arr) => {
+        const nextPv = arr[idx + 1];
+        if (!nextPv) return true;
+        const timeDiff = (new Date(nextPv.created_at).getTime() - new Date(pv.created_at).getTime()) / 1000;
+        return timeDiff > 1800;
+      }).length;
+      
+      const bounceRate = totalPageViews > 0 
+        ? Math.round((singlePageSessions / totalPageViews) * 100) 
+        : 0;
+
       setAnalytics({
         totalCount,
         typeDistribution,
@@ -312,6 +456,11 @@ export default function AnalyticsPage() {
         completionRate,
         dailyStats,
         topPages,
+        hourlyStats,
+        deviceStats,
+        referrerStats,
+        avgSessionDuration,
+        bounceRate,
       });
     } catch (err) {
       console.error("集計エラー:", err);
@@ -388,7 +537,7 @@ export default function AnalyticsPage() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
           Overview
         </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
           <div className="rounded-xl border bg-white p-4 shadow-sm">
             <p className="text-xs font-medium text-gray-500">総訪問数</p>
             <p className="mt-2 text-3xl font-bold text-purple-600">
@@ -415,12 +564,21 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-500">ハンドドリップ経験</p>
-            <p className="mt-2 text-3xl font-bold text-emerald-600">
-              {handDripYesRate}
+            <p className="text-xs font-medium text-gray-500">平均滞在時間</p>
+            <p className="mt-2 text-3xl font-bold text-amber-600">
+              {Math.floor(analytics.avgSessionDuration / 60)}
+              <span className="text-base font-normal text-gray-500">分</span>
+            </p>
+            <p className="mt-1 text-xs text-gray-400">ページ間の平均遷移時間</p>
+          </div>
+
+          <div className="rounded-xl border bg-white p-4 shadow-sm">
+            <p className="text-xs font-medium text-gray-500">バウンス率</p>
+            <p className="mt-2 text-3xl font-bold text-red-600">
+              {analytics.bounceRate}
               <span className="text-base font-normal text-gray-500">%</span>
             </p>
-            <p className="mt-1 text-xs text-gray-400">目の前で見たことがある人の割合</p>
+            <p className="mt-1 text-xs text-gray-400">1ページのみ閲覧して離脱</p>
           </div>
 
           <div className="rounded-xl border bg-white p-4 shadow-sm">
@@ -429,6 +587,79 @@ export default function AnalyticsPage() {
               {analytics.topType ?? "-"}
             </p>
             <p className="mt-1 text-xs text-gray-400">最も多かった診断タイプ</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 時間帯別推移 */}
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">時間帯別アクセス推移</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          何時にアクセスが集中しているか（時間×訪問数・診断完了数）
+        </p>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={analytics.hourlyStats}>
+              <XAxis dataKey="hour" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="pageViews" name="訪問数" fill="#8b5cf6" />
+              <Bar dataKey="quizCompletions" name="診断完了" fill="#ec4899" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* デバイス・リファラー */}
+      <section className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold">デバイス別アクセス</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            モバイル・タブレット・デスクトップの割合
+          </p>
+          <div className="mt-4 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={analytics.deviceStats}
+                  dataKey="count"
+                  nameKey="device"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={(entry) => `${entry.device} (${entry.percentage}%)`}
+                >
+                  {analytics.deviceStats.map((entry, index) => (
+                    <Cell
+                      key={`cell-${entry.device}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-xl border bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold">流入元 TOP10</h2>
+          <p className="mt-1 text-xs text-gray-500">
+            どこからアクセスされているか（リファラー）
+          </p>
+          <div className="mt-4 space-y-2 text-sm max-h-72 overflow-y-auto">
+            {analytics.referrerStats.map((ref) => (
+              <div
+                key={ref.referrer}
+                className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2"
+              >
+                <span className="font-medium truncate">{ref.referrer}</span>
+                <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                  {ref.count}件 / {ref.percentage}%
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
