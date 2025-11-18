@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 import {
   Coffee,
   Heart,
@@ -35,6 +36,59 @@ export type Activity = {
 };
 
 export default function AboutClient({ activities }: { activities: Activity[] }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // 動画の再生を保証する関数
+    const ensureVideoPlaying = () => {
+      if (video.paused && !document.hidden) {
+        video.play().catch(() => {
+          // 自動再生が失敗しても問題なし（muted動画は通常成功する）
+        });
+      }
+    };
+
+    // タブがアクティブになったときに再生を再開
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        ensureVideoPlaying();
+      }
+    };
+
+    // ページがフォーカスを取り戻したときに再生を再開
+    const handleFocus = () => {
+      ensureVideoPlaying();
+    };
+
+    // 動画が一時停止したときに自動的に再開を試みる
+    const handlePause = () => {
+      // 意図しない一時停止の場合は再開
+      if (!document.hidden) {
+        setTimeout(ensureVideoPlaying, 100);
+      }
+    };
+
+    // イベントリスナーの登録
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+    video.addEventListener("pause", handlePause);
+
+    // 初期再生の確保
+    ensureVideoPlaying();
+
+    // クリーンアップ
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+      if (video) {
+        video.removeEventListener("pause", handlePause);
+      }
+    };
+  }, []);
+
   return (
     <main className="relative">
       {/* ========== 1. Hero Section （動画版） ========== */}
@@ -42,6 +96,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
         {/* 背景動画 */}
         <div className="absolute inset-0">
           <video
+            ref={videoRef}
             className="h-full w-full object-cover"
             autoPlay
             muted
