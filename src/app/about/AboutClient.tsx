@@ -37,181 +37,235 @@ export type Activity = {
 
 export default function AboutClient({ activities }: { activities: Activity[] }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const sectionRef = useRef<HTMLElement>(null);
-  const [isVideoError, setIsVideoError] = useState(false);
+  const [videoState, setVideoState] = useState<'loading' | 'playing' | 'error' | 'fallback'>('loading');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    const video = videoRef.current;
-    const section = sectionRef.current;
-    if (!video || !section) return;
+    // モバイル判定
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent.toLowerCase();
+      const mobileKeywords = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i;
+      const touchPoints = navigator.maxTouchPoints > 0;
+      return mobileKeywords.test(userAgent) || touchPoints;
+    };
 
-    // 動画を強制的に再生する関数
-    const forcePlayVideo = async () => {
+    setIsMobile(checkMobile());
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    let playAttempts = 0;
+    const maxAttempts = 3;
+
+    // 動画再生を試みる関数
+    const attemptPlay = async () => {
+      if (!video || playAttempts >= maxAttempts) {
+        setVideoState('fallback');
+        return;
+      }
+
       try {
-        // 動画の状態をリセット
-        if (video.readyState >= 2) { // HAVE_CURRENT_DATA以上
-          await video.play();
-        } else {
-          // データが足りない場合は再読み込み
-          video.load();
-          // loadeddata イベントを待って再生
-          video.addEventListener('loadeddata', async () => {
-            try {
-              await video.play();
-            } catch (e) {
-              console.log('Play after reload failed:', e);
-            }
-          }, { once: true });
+        playAttempts++;
+        
+        // モバイルの場合は特別な処理
+        if (isMobile) {
+          // モバイルでは画質を下げて再生を優先
+          video.setAttribute('playsinline', 'true');
+          video.setAttribute('webkit-playsinline', 'true');
+          video.muted = true;
+          video.defaultMuted = true;
+          video.autoplay = true;
+        }
+
+        const playPromise = video.play();
+        
+        if (playPromise !== undefined) {
+          await playPromise;
+          setVideoState('playing');
+          console.log('Video playing successfully');
         }
       } catch (error) {
-        console.log('Force play failed:', error);
-        // モバイルブラウザなどで自動再生がブロックされた場合
-        // ユーザーインタラクションを待つ
-      }
-    };
-
-    // IntersectionObserverで画面内判定（より積極的に）
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // 画面に入ったらすぐ再生
-            forcePlayVideo();
-          }
-        });
-      },
-      {
-        threshold: 0, // 1ピクセルでも見えたら反応
-        rootMargin: '100px', // 画面に入る100px手前から準備開始
-      }
-    );
-
-    observer.observe(section);
-
-    // ページ表示時の処理
-    const handlePageShow = (event: PageTransitionEvent) => {
-      // バックフォワードキャッシュから復帰した場合も含む
-      if (!event.persisted) {
-        forcePlayVideo();
-      }
-    };
-
-    // タブのアクティブ状態を監視
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        forcePlayVideo();
-      }
-    };
-
-    // フォーカスイベント
-    const handleFocus = () => {
-      forcePlayVideo();
-    };
-
-    // スクロールイベント（ユーザーが操作している証拠）
-    let scrollTimer: NodeJS.Timeout;
-    const handleScroll = () => {
-      clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(() => {
-        // スクロールが止まったら動画の状態をチェック
-        if (video.paused && !document.hidden) {
-          const rect = section.getBoundingClientRect();
-          const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-          if (isVisible) {
-            forcePlayVideo();
-          }
+        console.error(`Play attempt ${playAttempts} failed:`, error);
+        
+        // 再試行
+        if (playAttempts < maxAttempts) {
+          setTimeout(attemptPlay, 1000);
+        } else {
+          setVideoState('fallback');
         }
-      }, 150);
+      }
     };
 
-    // 動画のイベントハンドラー
+    // 動画の各種イベントハンドラー
+    const handleLoadedData = () => {
+      console.log('Video data loaded');
+      attemptPlay();
+    };
+
     const handleCanPlay = () => {
-      forcePlayVideo();
-    };
-
-    const handleStalled = () => {
-      console.log('Video stalled, reloading...');
-      video.load();
+      console.log('Video can play');
+      if (videoState !== 'playing') {
+        attemptPlay();
+      }
     };
 
     const handleError = (e: Event) => {
       console.error('Video error:', e);
-      setIsVideoError(true);
+      setVideoState('error');
     };
 
-    // 定期的なチェック（最後の手段）
-    const intervalId = setInterval(() => {
-      if (video.paused && !document.hidden) {
-        const rect = section.getBoundingClientRect();
-        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-        if (isVisible) {
-          console.log('Interval check: restarting video');
-          forcePlayVideo();
+    const handleStalled = () => {
+      console.log('Video stalled');
+      // ネットワークが遅い場合は画像にフォールバック
+      setTimeout(() => {
+        if (videoState === 'loading') {
+          setVideoState('fallback');
         }
+      }, 5000);
+    };
+
+    const handlePlaying = () => {
+      setVideoState('playing');
+    };
+
+    const handlePause = () => {
+      // 意図しない一時停止の場合は再開を試みる
+      if (!document.hidden && videoState === 'playing') {
+        setTimeout(() => {
+          video.play().catch(() => {
+            console.log('Resume failed');
+          });
+        }, 100);
       }
-    }, 5000); // 5秒ごとにチェック
+    };
+
+    // ユーザーインタラクションで再生を試みる（モバイル対策）
+    const handleUserInteraction = () => {
+      if (video.paused && videoState !== 'fallback') {
+        attemptPlay();
+      }
+    };
 
     // イベントリスナー登録
-    window.addEventListener('pageshow', handlePageShow);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleFocus);
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    video.addEventListener('loadeddata', handleLoadedData);
     video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('stalled', handleStalled);
     video.addEventListener('error', handleError);
+    video.addEventListener('stalled', handleStalled);
+    video.addEventListener('playing', handlePlaying);
+    video.addEventListener('pause', handlePause);
 
-    // 初回再生
-    forcePlayVideo();
+    // モバイルでのユーザーインタラクション対応
+    if (isMobile) {
+      document.addEventListener('touchstart', handleUserInteraction, { once: true });
+      document.addEventListener('click', handleUserInteraction, { once: true });
+    }
+
+    // タブ切り替え対応
+    const handleVisibilityChange = () => {
+      if (!document.hidden && video.paused && videoState === 'playing') {
+        attemptPlay();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // 初回読み込みタイムアウト（10秒で諦める）
+    const loadTimeout = setTimeout(() => {
+      if (videoState === 'loading') {
+        console.log('Video load timeout, falling back to image');
+        setVideoState('fallback');
+      }
+    }, 10000);
 
     // クリーンアップ
     return () => {
-      observer.unobserve(section);
-      clearInterval(intervalId);
-      clearTimeout(scrollTimer);
-      window.removeEventListener('pageshow', handlePageShow);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleFocus);
-      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(loadTimeout);
       if (video) {
+        video.removeEventListener('loadeddata', handleLoadedData);
         video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('stalled', handleStalled);
         video.removeEventListener('error', handleError);
+        video.removeEventListener('stalled', handleStalled);
+        video.removeEventListener('playing', handlePlaying);
+        video.removeEventListener('pause', handlePause);
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (isMobile) {
+        document.removeEventListener('touchstart', handleUserInteraction);
+        document.removeEventListener('click', handleUserInteraction);
       }
     };
-  }, []);
+  }, [isMobile, videoState]);
+
+  // デバッグ情報を表示（開発時のみ）
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Video state:', videoState);
+      console.log('Is mobile:', isMobile);
+    }
+  }, [videoState, isMobile]);
+
+  const showVideo = videoState !== 'fallback' && videoState !== 'error';
 
   return (
     <main className="relative">
-      {/* ========== 1. Hero Section （動画版） ========== */}
-      <section ref={sectionRef} className="relative h-[60vh] md:h-[70vh] overflow-hidden">
-        {/* 背景動画/画像 */}
+      {/* ========== 1. Hero Section ========== */}
+      <section className="relative h-[60vh] md:h-[70vh] overflow-hidden">
+        {/* 背景 */}
         <div className="absolute inset-0">
-          {!isVideoError ? (
-            <video
-              ref={videoRef}
-              className="h-full w-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto" // autoに変更してより積極的に読み込み
-              poster="/images/about/hero.jpg"
-            >
-              <source src="/videos/about-hero.webm" type="video/webm" />
-              <source src="/videos/about-hero.mp4" type="video/mp4" />
-            </video>
-          ) : (
-            <Image
-              src="/images/about/hero.jpg"
-              alt="KCC Hero"
-              fill
-              className="object-cover"
-              priority
-            />
+          {/* 常に画像を背景として配置（フォールバック兼初期表示） */}
+          <Image
+            src="/images/about/hero.jpg"
+            alt="KCC Hero"
+            fill
+            className="object-cover"
+            priority
+          />
+
+          {/* 動画オーバーレイ（条件付き表示） */}
+          {showVideo && (
+            <div className="absolute inset-0">
+              <video
+                ref={videoRef}
+                className="h-full w-full object-cover"
+                autoPlay
+                muted
+                loop
+                playsInline
+                webkit-playsinline="true"
+                x5-video-player-type="h5"
+                x5-video-player-fullscreen="true"
+                preload={isMobile ? "metadata" : "auto"}
+                poster="/images/about/hero.jpg"
+                style={{ 
+                  // モバイルでのフルスクリーン対策
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
+              >
+                <source 
+                  src="/videos/about-hero.webm" 
+                  type="video/webm"
+                />
+                <source 
+                  src="/videos/about-hero.mp4" 
+                  type="video/mp4"
+                />
+              </video>
+            </div>
           )}
 
           {/* 黒グラデーションのオーバーレイ */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
+
+          {/* デバッグ情報（開発時のみ） */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="absolute top-4 left-4 bg-black/50 text-white text-xs p-2 rounded">
+              State: {videoState} | Mobile: {isMobile ? 'Yes' : 'No'}
+            </div>
+          )}
         </div>
 
         {/* テキスト */}
