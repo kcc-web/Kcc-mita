@@ -328,8 +328,10 @@ export default function AnalyticsPage() {
       const hourlyMap: Record<string, { pageViews: number; quizCompletions: number }> = {};
 
       pageViews.forEach((pv) => {
-        const hour = new Date(pv.created_at).getHours();
-        const hourLabel = `${hour}:00`;
+        // 日本時間に変換（UTC+9）
+        const date = new Date(pv.created_at);
+        const jstHour = (date.getUTCHours() + 9) % 24; // UTC → JST
+        const hourLabel = `${jstHour}:00`;
         if (!hourlyMap[hourLabel]) {
           hourlyMap[hourLabel] = { pageViews: 0, quizCompletions: 0 };
         }
@@ -337,8 +339,10 @@ export default function AnalyticsPage() {
       });
 
       rows.forEach((row) => {
-        const hour = new Date(row.created_at).getHours();
-        const hourLabel = `${hour}:00`;
+        // 日本時間に変換（UTC+9）
+        const date = new Date(row.created_at);
+        const jstHour = (date.getUTCHours() + 9) % 24; // UTC → JST
+        const hourLabel = `${jstHour}:00`;
         if (!hourlyMap[hourLabel]) {
           hourlyMap[hourLabel] = { pageViews: 0, quizCompletions: 0 };
         }
@@ -593,9 +597,9 @@ export default function AnalyticsPage() {
 
       {/* 時間帯別推移 */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">時間帯別アクセス推移</h2>
+        <h2 className="text-lg font-semibold">時間帯別アクセス推移（日本時間）</h2>
         <p className="mt-1 text-xs text-gray-500">
-          何時にアクセスが集中しているか（時間×訪問数・診断完了数）
+          何時にアクセスが集中しているか（JST = 日本標準時）
         </p>
         <div className="mt-4 h-72">
           <ResponsiveContainer width="100%" height="100%">
