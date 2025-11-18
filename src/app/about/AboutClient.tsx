@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import {
   Coffee,
   Heart,
@@ -11,7 +10,6 @@ import {
   Calendar,
   MapPin,
   Star,
-  ArrowRight,
 } from "lucide-react";
 
 function IconBadge({ name }: { name: string }) {
@@ -50,9 +48,8 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
             loop
             playsInline
             preload="metadata"
-            poster="/images/about/hero.jpg" // 読み込み前の静止画
+            poster="/images/about/hero.jpg"
           >
-            {/* あれば webm も追加 */}
             <source src="/videos/about-hero.webm" type="video/webm" />
             <source src="/videos/about-hero.mp4" type="video/mp4" />
           </video>
@@ -102,7 +99,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
           className="text-center"
         >
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8">
-            慶應珈琲倶楽部とは？
+            慶應珈琲倶楽部とは?
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed max-w-3xl mx-auto">
             私たちは日吉キャンパスを拠点に活動する、コーヒーを愛する学生サークルです。
@@ -159,22 +156,22 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
       </section>
 
       {/* ========== 4. Activities ========== */}
-      <section className="py-16 md:py-20 px-6 md:px-8 max-w-7xl mx-auto">
+      <section className="py-20 md:py-32 px-6 md:px-8 max-w-7xl mx-auto">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-16"
         >
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 bg-gradient-to-r from-pink-600 via-rose-500 to-amber-500 bg-clip-text text-transparent">
             Activities
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg md:text-xl text-muted-foreground">
             多彩な活動を通じて、コーヒーの魅力を探求しています
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-20">
           {activities.map((activity: Activity, index: number) => (
             <motion.div
               key={activity.id}
@@ -209,7 +206,7 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
                     {activity.tags.map((tag: string) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium"
+                        className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-pink-50 to-amber-50 text-gray-700 text-xs font-medium border border-pink-100"
                       >
                         {tag}
                       </span>
@@ -220,42 +217,22 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
             </motion.div>
           ))}
         </div>
-      </section>
 
-      {/* ========== 5. CTA Section ========== */}
-      <section className="py-16 md:py-20 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500">
-        <div className="max-w-4xl mx-auto px-6 md:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="space-y-6"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
-              一緒にコーヒーの世界を探求しませんか？
-            </h2>
-            <p className="text-lg text-white/90">
-              新メンバー募集中！コーヒー初心者も大歓迎です
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-white text-pink-600 px-8 py-4 rounded-full font-semibold hover:bg-gray-50 transition-colors"
-              >
-                見学申し込み
-                <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
-                href="https://www.instagram.com/" // TODO: 公式アカに差し替え
-                className="inline-flex items-center justify-center gap-2 bg-white/20 backdrop-blur-sm text-white border-2 border-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 transition-colors"
-              >
-                SNSをフォロー
-                <Heart className="h-5 w-5" />
-              </Link>
-            </div>
-          </motion.div>
-        </div>
+        {/* エレガントな締めくくり */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="text-center pt-8 border-t border-gray-200"
+        >
+          <p className="text-2xl md:text-3xl font-light text-gray-800 mb-4">
+            コーヒーと共に、豊かな時間を。
+          </p>
+          <p className="text-sm md:text-base text-muted-foreground">
+            Keio Coffee Club
+          </p>
+        </motion.div>
       </section>
     </main>
   );
