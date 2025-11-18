@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Coffee,
   Heart,
@@ -37,54 +37,145 @@ export type Activity = {
 
 export default function AboutClient({ activities }: { activities: Activity[] }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [isVideoError, setIsVideoError] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    const section = sectionRef.current;
+    if (!video || !section) return;
 
-    // 動画の再生を保証する関数
-    const ensureVideoPlaying = () => {
-      if (video.paused && !document.hidden) {
-        video.play().catch(() => {
-          // 自動再生が失敗しても問題なし（muted動画は通常成功する）
-        });
+    // 動画を強制的に再生する関数
+    const forcePlayVideo = async () => {
+      try {
+        // 動画の状態をリセット
+        if (video.readyState >= 2) { // HAVE_CURRENT_DATA以上
+          await video.play();
+        } else {
+          // データが足りない場合は再読み込み
+          video.load();
+          // loadeddata イベントを待って再生
+          video.addEventListener('loadeddata', async () => {
+            try {
+              await video.play();
+            } catch (e) {
+              console.log('Play after reload failed:', e);
+            }
+          }, { once: true });
+        }
+      } catch (error) {
+        console.log('Force play failed:', error);
+        // モバイルブラウザなどで自動再生がブロックされた場合
+        // ユーザーインタラクションを待つ
       }
     };
 
-    // タブがアクティブになったときに再生を再開
+    // IntersectionObserverで画面内判定（より積極的に）
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // 画面に入ったらすぐ再生
+            forcePlayVideo();
+          }
+        });
+      },
+      {
+        threshold: 0, // 1ピクセルでも見えたら反応
+        rootMargin: '100px', // 画面に入る100px手前から準備開始
+      }
+    );
+
+    observer.observe(section);
+
+    // ページ表示時の処理
+    const handlePageShow = (event: PageTransitionEvent) => {
+      // バックフォワードキャッシュから復帰した場合も含む
+      if (!event.persisted) {
+        forcePlayVideo();
+      }
+    };
+
+    // タブのアクティブ状態を監視
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        ensureVideoPlaying();
+        forcePlayVideo();
       }
     };
 
-    // ページがフォーカスを取り戻したときに再生を再開
+    // フォーカスイベント
     const handleFocus = () => {
-      ensureVideoPlaying();
+      forcePlayVideo();
     };
 
-    // 動画が一時停止したときに自動的に再開を試みる
-    const handlePause = () => {
-      // 意図しない一時停止の場合は再開
-      if (!document.hidden) {
-        setTimeout(ensureVideoPlaying, 100);
+    // スクロールイベント（ユーザーが操作している証拠）
+    let scrollTimer: NodeJS.Timeout;
+    const handleScroll = () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => {
+        // スクロールが止まったら動画の状態をチェック
+        if (video.paused && !document.hidden) {
+          const rect = section.getBoundingClientRect();
+          const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+          if (isVisible) {
+            forcePlayVideo();
+          }
+        }
+      }, 150);
+    };
+
+    // 動画のイベントハンドラー
+    const handleCanPlay = () => {
+      forcePlayVideo();
+    };
+
+    const handleStalled = () => {
+      console.log('Video stalled, reloading...');
+      video.load();
+    };
+
+    const handleError = (e: Event) => {
+      console.error('Video error:', e);
+      setIsVideoError(true);
+    };
+
+    // 定期的なチェック（最後の手段）
+    const intervalId = setInterval(() => {
+      if (video.paused && !document.hidden) {
+        const rect = section.getBoundingClientRect();
+        const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+        if (isVisible) {
+          console.log('Interval check: restarting video');
+          forcePlayVideo();
+        }
       }
-    };
+    }, 5000); // 5秒ごとにチェック
 
-    // イベントリスナーの登録
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleFocus);
-    video.addEventListener("pause", handlePause);
+    // イベントリスナー登録
+    window.addEventListener('pageshow', handlePageShow);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    video.addEventListener('canplay', handleCanPlay);
+    video.addEventListener('stalled', handleStalled);
+    video.addEventListener('error', handleError);
 
-    // 初期再生の確保
-    ensureVideoPlaying();
+    // 初回再生
+    forcePlayVideo();
 
     // クリーンアップ
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleFocus);
+      observer.unobserve(section);
+      clearInterval(intervalId);
+      clearTimeout(scrollTimer);
+      window.removeEventListener('pageshow', handlePageShow);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('scroll', handleScroll);
       if (video) {
-        video.removeEventListener("pause", handlePause);
+        video.removeEventListener('canplay', handleCanPlay);
+        video.removeEventListener('stalled', handleStalled);
+        video.removeEventListener('error', handleError);
       }
     };
   }, []);
@@ -92,22 +183,32 @@ export default function AboutClient({ activities }: { activities: Activity[] }) 
   return (
     <main className="relative">
       {/* ========== 1. Hero Section （動画版） ========== */}
-      <section className="relative h-[60vh] md:h-[70vh] overflow-hidden">
-        {/* 背景動画 */}
+      <section ref={sectionRef} className="relative h-[60vh] md:h-[70vh] overflow-hidden">
+        {/* 背景動画/画像 */}
         <div className="absolute inset-0">
-          <video
-            ref={videoRef}
-            className="h-full w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            poster="/images/about/hero.jpg"
-          >
-            <source src="/videos/about-hero.webm" type="video/webm" />
-            <source src="/videos/about-hero.mp4" type="video/mp4" />
-          </video>
+          {!isVideoError ? (
+            <video
+              ref={videoRef}
+              className="h-full w-full object-cover"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto" // autoに変更してより積極的に読み込み
+              poster="/images/about/hero.jpg"
+            >
+              <source src="/videos/about-hero.webm" type="video/webm" />
+              <source src="/videos/about-hero.mp4" type="video/mp4" />
+            </video>
+          ) : (
+            <Image
+              src="/images/about/hero.jpg"
+              alt="KCC Hero"
+              fill
+              className="object-cover"
+              priority
+            />
+          )}
 
           {/* 黒グラデーションのオーバーレイ */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
