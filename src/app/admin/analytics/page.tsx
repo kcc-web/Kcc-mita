@@ -14,6 +14,8 @@ import {
   Pie,
   Cell,
   Legend,
+  LineChart,
+  Line,
 } from "recharts";
 
 type TypeDistribution = {
@@ -46,6 +48,17 @@ type AgeTypeStat = {
   percentage: number; // その年代の中での割合
 };
 
+type DailyStats = {
+  date: string;
+  pageViews: number;
+  quizCompletions: number;
+};
+
+type PageStats = {
+  page: string;
+  count: number;
+};
+
 type Analytics = {
   totalCount: number;
   typeDistribution: TypeDistribution[];
@@ -55,6 +68,10 @@ type Analytics = {
   ageStats: AgeStats[];
   ageTypeStats: AgeTypeStat[];
   topType: string | null;
+  totalPageViews: number;
+  completionRate: number;
+  dailyStats: DailyStats[];
+  topPages: PageStats[];
 };
 
 const COLORS = ["#ec4899", "#f43f5e", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"];
@@ -71,18 +88,21 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const { data, error } = await supabase
+      // 診断結果を取得
+      const { data: quizData, error: quizError } = await supabase
         .from("quiz_results")
-        // 使うカラムだけ取得して転送量を削減
         .select("result_type, age_group, seen_hand_drip, known_specialty, created_at");
 
-      if (error) throw error;
-      if (!data) {
-        setAnalytics(null);
-        return;
-      }
+      if (quizError) throw quizError;
 
-      const rows = data as {
+      // ページビューを取得
+      const { data: pageViewData, error: pageViewError } = await supabase
+        .from("page_views")
+        .select("page_path, created_at");
+
+      if (pageViewError) throw pageViewError;
+
+      const rows = (quizData || []) as {
         result_type: string;
         age_group: string | null;
         seen_hand_drip: boolean | null;
@@ -90,8 +110,15 @@ export default function AnalyticsPage() {
         created_at: string;
       }[];
 
+      const pageViews = (pageViewData || []) as {
+        page_path: string;
+        created_at: string;
+      }[];
+
       const totalCount = rows.length;
-      if (totalCount === 0) {
+      const totalPageViews = pageViews.length;
+
+      if (totalCount === 0 && totalPageViews === 0) {
         setAnalytics(null);
         return;
       }
@@ -114,7 +141,7 @@ export default function AnalyticsPage() {
       const topType =
         [...typeDistribution].sort((a, b) => b.count - a.count)[0]?.type ?? null;
 
-      // --- 年代別分布（単純カウント）---
+      // --- 年代別分布 ---
       const ageCounts: Record<string, number> = {};
       rows.forEach((row) => {
         const age = row.age_group || "未回答";
@@ -145,7 +172,7 @@ export default function AnalyticsPage() {
         unknown: specialtyUnknown,
       };
 
-      // --- 年代別 詳細集計 ＋ 年代×タイプ ---
+      // --- 年代別 詳細集計 ---
       const ageBuckets: Record<
         string,
         {
@@ -158,14 +185,12 @@ export default function AnalyticsPage() {
         }
       > = {};
 
-      // 年代×タイプのカウント
       const ageTypeCounts: Record<string, Record<string, number>> = {};
 
       rows.forEach((row) => {
         const age = row.age_group || "未回答";
         const type = row.result_type || "未分類";
 
-        // 年代バケット初期化
         if (!ageBuckets[age]) {
           ageBuckets[age] = {
             total: 0,
@@ -180,19 +205,16 @@ export default function AnalyticsPage() {
         const bucket = ageBuckets[age];
         bucket.total += 1;
 
-        // ハンドドリップ
         if (row.seen_hand_drip) {
           bucket.handDripYes += 1;
         } else {
           bucket.handDripNo += 1;
         }
 
-        // スペシャルティ認知
         if (row.known_specialty === "know") bucket.specialtyKnow += 1;
         else if (row.known_specialty === "heard") bucket.specialtyHeard += 1;
         else bucket.specialtyUnknown += 1;
 
-        // 年代×タイプ
         if (!ageTypeCounts[age]) {
           ageTypeCounts[age] = {};
         }
@@ -224,6 +246,59 @@ export default function AnalyticsPage() {
         });
       });
 
+      // --- 日別統計 ---
+      const dailyMap: Record<string, { pageViews: number; quizCompletions: number }> = {};
+
+      pageViews.forEach((pv) => {
+        const date = new Date(pv.created_at).toLocaleDateString("ja-JP", {
+          month: "short",
+          day: "numeric",
+        });
+        if (!dailyMap[date]) {
+          dailyMap[date] = { pageViews: 0, quizCompletions: 0 };
+        }
+        dailyMap[date].pageViews += 1;
+      });
+
+      rows.forEach((row) => {
+        const date = new Date(row.created_at).toLocaleDateString("ja-JP", {
+          month: "short",
+          day: "numeric",
+        });
+        if (!dailyMap[date]) {
+          dailyMap[date] = { pageViews: 0, quizCompletions: 0 };
+        }
+        dailyMap[date].quizCompletions += 1;
+      });
+
+      const dailyStats: DailyStats[] = Object.entries(dailyMap)
+        .map(([date, stats]) => ({
+          date,
+          pageViews: stats.pageViews,
+          quizCompletions: stats.quizCompletions,
+        }))
+        .sort((a, b) => {
+          const dateA = new Date(a.date);
+          const dateB = new Date(b.date);
+          return dateA.getTime() - dateB.getTime();
+        });
+
+      // --- ページ別アクセス数 ---
+      const pageCounts: Record<string, number> = {};
+      pageViews.forEach((pv) => {
+        const page = pv.page_path === "/" ? "トップ" : pv.page_path;
+        pageCounts[page] = (pageCounts[page] || 0) + 1;
+      });
+
+      const topPages: PageStats[] = Object.entries(pageCounts)
+        .map(([page, count]) => ({ page, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // --- 診断完了率 ---
+      const completionRate =
+        totalPageViews > 0 ? Math.round((totalCount / totalPageViews) * 100) : 0;
+
       setAnalytics({
         totalCount,
         typeDistribution,
@@ -233,6 +308,10 @@ export default function AnalyticsPage() {
         ageStats,
         ageTypeStats,
         topType,
+        totalPageViews,
+        completionRate,
+        dailyStats,
+        topPages,
       });
     } catch (err) {
       console.error("集計エラー:", err);
@@ -269,7 +348,6 @@ export default function AnalyticsPage() {
     (analytics.specialtyKnowledge.know / analytics.totalCount) * 100
   );
 
-  // 年代別の「率」だけをまとめたチャート用データ
   const ageRateChartData = analytics.ageStats
     .slice()
     .sort((a, b) => a.age.localeCompare(b.age))
@@ -279,7 +357,6 @@ export default function AnalyticsPage() {
       specialtyKnowRate: a.specialtyKnowRate,
     }));
 
-  // 年代×タイプの積み上げ棒グラフ用データ
   const allTypes = analytics.typeDistribution.map((t) => t.type);
   const ageTypeChartData = analytics.ageStats
     .slice()
@@ -301,7 +378,7 @@ export default function AnalyticsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">診断結果アナリティクス</h1>
           <p className="mt-1 text-sm text-gray-500">
-            MBTIコーヒー診断の結果をもとに、来場者の傾向をざっくり把握するための管理画面です。
+            訪問数・診断結果・来場者傾向を一元管理する管理画面です。
           </p>
         </div>
       </header>
@@ -311,48 +388,98 @@ export default function AnalyticsPage() {
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">
           Overview
         </h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
           <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-500">総診断数</p>
+            <p className="text-xs font-medium text-gray-500">総訪問数</p>
+            <p className="mt-2 text-3xl font-bold text-purple-600">
+              {analytics.totalPageViews.toLocaleString()}
+            </p>
+            <p className="mt-1 text-xs text-gray-400">全ページへのアクセス合計</p>
+          </div>
+
+          <div className="rounded-xl border bg-white p-4 shadow-sm">
+            <p className="text-xs font-medium text-gray-500">診断完了数</p>
             <p className="mt-2 text-3xl font-bold text-pink-600">
               {analytics.totalCount.toLocaleString()}
             </p>
-            <p className="mt-1 text-xs text-gray-400">
-              三田祭期間中に診断を完了した人数の合計
-            </p>
+            <p className="mt-1 text-xs text-gray-400">診断を完了した人数</p>
           </div>
 
           <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-500">ハンドドリップ経験あり</p>
+            <p className="text-xs font-medium text-gray-500">診断完了率</p>
             <p className="mt-2 text-3xl font-bold text-blue-600">
+              {analytics.completionRate}
+              <span className="text-base font-normal text-gray-500">%</span>
+            </p>
+            <p className="mt-1 text-xs text-gray-400">訪問者のうち診断を完了した割合</p>
+          </div>
+
+          <div className="rounded-xl border bg-white p-4 shadow-sm">
+            <p className="text-xs font-medium text-gray-500">ハンドドリップ経験</p>
+            <p className="mt-2 text-3xl font-bold text-emerald-600">
               {handDripYesRate}
               <span className="text-base font-normal text-gray-500">%</span>
             </p>
-            <p className="mt-1 text-xs text-gray-400">
-              「目の前でハンドドリップを見たことがある」人の割合
-            </p>
-          </div>
-
-          <div className="rounded-xl border bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-gray-500">スペシャルティ知ってる</p>
-            <p className="mt-2 text-3xl font-bold text-green-600">
-              {specialtyKnowRate}
-              <span className="text-base font-normal text-gray-500">%</span>
-            </p>
-            <p className="mt-1 text-xs text-gray-400">
-              「スペシャルティコーヒーを知っている」と回答した割合
-            </p>
+            <p className="mt-1 text-xs text-gray-400">目の前で見たことがある人の割合</p>
           </div>
 
           <div className="rounded-xl border bg-white p-4 shadow-sm">
             <p className="text-xs font-medium text-gray-500">最多タイプ</p>
-            <p className="mt-2 text-2xl font-bold text-purple-600">
+            <p className="mt-2 text-2xl font-bold text-rose-600">
               {analytics.topType ?? "-"}
             </p>
-            <p className="mt-1 text-xs text-gray-400">
-              最も多かった診断タイプ（全体集計）
-            </p>
+            <p className="mt-1 text-xs text-gray-400">最も多かった診断タイプ</p>
           </div>
+        </div>
+      </section>
+
+      {/* 日別推移 */}
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">日別アクセス推移</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          訪問数と診断完了数の日別トレンド
+        </p>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={analytics.dailyStats}>
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="pageViews"
+                name="訪問数"
+                stroke="#8b5cf6"
+                strokeWidth={2}
+              />
+              <Line
+                type="monotone"
+                dataKey="quizCompletions"
+                name="診断完了"
+                stroke="#ec4899"
+                strokeWidth={2}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* ページ別アクセス数 */}
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="text-lg font-semibold">人気ページ TOP10</h2>
+        <p className="mt-1 text-xs text-gray-500">
+          どのページがよく見られているか
+        </p>
+        <div className="mt-4 h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={analytics.topPages} layout="vertical">
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="page" width={120} />
+              <Tooltip />
+              <Bar dataKey="count" fill="#3b82f6" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </section>
 
@@ -401,7 +528,6 @@ export default function AnalyticsPage() {
 
       {/* 年代別 分布＋率 */}
       <section className="grid gap-6 md:grid-cols-2">
-        {/* 年代別分布（件数） */}
         <div className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">年代別分布（件数）</h2>
           <p className="mt-1 text-xs text-gray-500">
@@ -433,7 +559,6 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* 年代別・率の比較 */}
         <div className="rounded-xl border bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold">年代別のハンドドリップ・認知率</h2>
           <p className="mt-1 text-xs text-gray-500">
@@ -462,7 +587,7 @@ export default function AnalyticsPage() {
         </div>
       </section>
 
-      {/* 年代×タイプ分布（積み上げ棒グラフ） */}
+      {/* 年代×タイプ分布 */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold">年代×タイプ分布</h2>
         <p className="mt-1 text-xs text-gray-500">
@@ -489,7 +614,7 @@ export default function AnalyticsPage() {
         </div>
       </section>
 
-      {/* 年代別 詳細サマリー＋タイプ一覧 */}
+      {/* 年代別 詳細サマリー */}
       <section className="rounded-xl border bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold">年代別 詳細サマリー</h2>
         <p className="mt-1 text-xs text-gray-500">
@@ -557,4 +682,3 @@ export default function AnalyticsPage() {
     </main>
   );
 }
-

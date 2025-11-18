@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import VenueStatusBadge from "@/components/ui/VenueStatusBadge";
 import { pickColors } from "@/lib/format";
 import NavLinks from "@/components/ui/NavLinks";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
 // ← SSRを常に最新化（または export const revalidate = 0 でも可）
 export const dynamic = "force-dynamic";
@@ -59,49 +60,48 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="ja">
       <body className="bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-md shadow-[0_1px_10px_rgba(0,0,0,0.03)]">
-  <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
-    {/* 左：ロゴ */}
-    <Link href="/" aria-label="KCC Mita" className="text-base md:text-lg font-semibold tracking-tight flex-shrink-0">
-      KCC
-    </Link>
+        {/* ページビュー追跡 */}
+        <PageViewTracker />
+        
+        <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-md shadow-[0_1px_10px_rgba(0,0,0,0.03)]">
+          <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
+            {/* 左：ロゴ */}
+            <Link href="/" aria-label="KCC Mita" className="text-base md:text-lg font-semibold tracking-tight flex-shrink-0">
+              KCC
+            </Link>
 
-    {/* 中央：混雑バッジ（レスポンシブ幅調整） */}
-    <div className="flex-1 min-w-0 flex justify-center">
-      <VenueStatusBadge 
-        initialVenue={stableVenue} 
-        initialSettings={stableSettings} 
-        className="max-w-full sm:max-w-[360px]"
-      />
-    </div>
+            {/* 中央：混雑バッジ（レスポンシブ幅調整） */}
+            <div className="flex-1 min-w-0 flex justify-center">
+              <VenueStatusBadge 
+                initialVenue={stableVenue} 
+                initialSettings={stableSettings} 
+                className="max-w-full sm:max-w-[360px]"
+              />
+            </div>
 
-    {/* 右：ナビ（PC = NavLinks / SP = ハンバーガー） */}
-    <div className="flex items-center gap-2 sm:gap-3">
-      <nav className="hidden md:block">
-        <NavLinks />
-      </nav>
+            {/* 右：ナビ（PC = NavLinks / SP = ハンバーガー） */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <nav className="hidden md:block">
+                <NavLinks />
+              </nav>
 
-      <details className="md:hidden relative">
-        <summary className="list-none inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border cursor-pointer p-0" aria-label="Open menu">
-          <span className="sr-only">Open menu</span>
-          <MenuIcon className="h-5 w-5" aria-hidden />
-        </summary>
-        <div className="absolute right-0 mt-2 min-w-[240px] rounded-xl border border-border bg-background shadow-md">
-          <div className="px-4 py-3">
-            <NavLinks />
+              <details className="md:hidden relative">
+                <summary className="list-none inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border cursor-pointer p-0" aria-label="Open menu">
+                  <span className="sr-only">Open menu</span>
+                  <MenuIcon className="h-5 w-5" aria-hidden />
+                </summary>
+                <div className="absolute right-0 mt-2 min-w-[240px] rounded-xl border border-border bg-background shadow-md">
+                  <div className="px-4 py-3">
+                    <NavLinks />
+                  </div>
+                </div>
+              </details>
+            </div>
           </div>
-        </div>
-      </details>
-    </div>
-  </div>
-</header>  
-
+        </header>
+        
         <main>{children}</main>
       </body>
     </html>
   );
 }
-
-
-
-
