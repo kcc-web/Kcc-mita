@@ -47,9 +47,9 @@ export const BEAN_TYPES: BeanProfile[] = [
 伝統的なコーヒーの味わいを大切にする、信頼できる一杯です。`,
     profile: {
       brightness: 42,  // 中央やや下
-      texture: 45,     // ほぼ中央
-      sweetness: 48,   // ほぼ中央
-      aroma: 43,       // 中央やや下
+      texture: 75,     // ほぼ中央
+      sweetness: 79,   // ほぼ中央
+      aroma: 89,       // 中央やや下
     },
     fallbackImage: "/beans/kcc-blend.jpg",
     roast: "深煎り",
@@ -98,8 +98,8 @@ export const BEAN_TYPES: BeanProfile[] = [
     profile: {
       brightness: 32,  // 中央やや上
       texture: 62,     // ほぼ中央
-      sweetness: 78,   // 中央やや下
-      aroma: 73,       // 中央やや下
+      sweetness: 58,   // 中央やや下
+      aroma: 45,       // 中央やや下
     },
     fallbackImage: "/beans/ethiopia-washed.jpg",
     roast: "浅煎り",
