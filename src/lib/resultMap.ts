@@ -71,10 +71,10 @@ export const BEAN_TYPES: BeanProfile[] = [
 どんなシーンにも溶け込み、リラックスした時間を演出します。
 毎日飲んでも飽きない、安定感のある味わいです。`,
     profile: {
-      brightness: 50,  // 完全中央
-      texture: 50,     // 完全中央
-      sweetness: 50,   // 完全中央
-      aroma: 50,       // 完全中央
+      brightness: 45,  // 完全中央
+      texture: 36,     // 完全中央
+      sweetness: 59,   // 完全中央
+      aroma: 46,       // 完全中央
     },
     fallbackImage: "/beans/honduras.jpg",
     roast: "浅煎り",
@@ -96,10 +96,10 @@ export const BEAN_TYPES: BeanProfile[] = [
 一口ごとに味の輪郭がはっきりと感じられ、コーヒーの奥深さを探求できます。
 スペシャルティコーヒーの魅力を存分に味わいたい方におすすめです。`,
     profile: {
-      brightness: 45,  // 中央やや上
-      texture: 57,     // ほぼ中央
-      sweetness: 58,   // 中央やや下
-      aroma: 45,       // 中央やや下
+      brightness: 50,  // 中央やや上
+      texture: 50,     // ほぼ中央
+      sweetness: 50,   // 中央やや下
+      aroma: 50,       // 中央やや下
     },
     fallbackImage: "/beans/ethiopia-washed.jpg",
     roast: "浅煎り",
@@ -122,7 +122,7 @@ export const BEAN_TYPES: BeanProfile[] = [
 個性的なコーヒーを楽しみたい、冒険心のあるあなたにぴったりです。`,
     profile: {
       brightness: 68,  // 極端に高い
-      texture: 25,     // 極端に低い
+      texture: 50,     // 極端に低い
       sweetness: 72,   // 極端に高い
       aroma: 78,       // 極端に高い
     },
@@ -188,9 +188,9 @@ const PRIOR: Record<BeanTypeKey, number> = {
   classic: 0.80,      // わずかに優遇
   balancer: 0.95,     // 基準値
   seeker: 0.95,       // わずかに優遇
-  dreamer: 1.05,      // わずかにペナルティ
+  dreamer: 1.00,      // わずかにペナルティ
   adventurer: 1.5,   // わずかにペナルティ
-  pioneer: 1.15,      // レア感維持
+  pioneer: 1.1,      // レア感維持
 };
 
 const distance = (a: Scores, b: Scores, key: BeanTypeKey) => {
