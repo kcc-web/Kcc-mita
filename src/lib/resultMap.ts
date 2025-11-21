@@ -96,8 +96,8 @@ export const BEAN_TYPES: BeanProfile[] = [
 一口ごとに味の輪郭がはっきりと感じられ、コーヒーの奥深さを探求できます。
 スペシャルティコーヒーの魅力を存分に味わいたい方におすすめです。`,
     profile: {
-      brightness: 32,  // 中央やや上
-      texture: 62,     // ほぼ中央
+      brightness: 45,  // 中央やや上
+      texture: 57,     // ほぼ中央
       sweetness: 58,   // 中央やや下
       aroma: 45,       // 中央やや下
     },
@@ -189,7 +189,7 @@ const PRIOR: Record<BeanTypeKey, number> = {
   balancer: 0.95,     // 基準値
   seeker: 0.95,       // わずかに優遇
   dreamer: 1.05,      // わずかにペナルティ
-  adventurer: 1.05,   // わずかにペナルティ
+  adventurer: 1.5,   // わずかにペナルティ
   pioneer: 1.15,      // レア感維持
 };
 
