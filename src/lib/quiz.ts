@@ -21,7 +21,7 @@ export const QUESTIONS: Question[] = [
   { 
     id: 2, 
     axis: "SN", 
-    text: "新しいことに挑戦するのが好きだ。",
+    text: "新しいことに挑戦するか。",
     leftLabel: "全くそう思わない",
     rightLabel: "とてもそう思う"
   },
@@ -49,14 +49,14 @@ export const QUESTIONS: Question[] = [
   { 
     id: 6, 
     axis: "TF", 
-    text: "日々の中で「小さなこだわり」を大切にしている。",
+    text: "日々の中で「小さなこだわり」がある",
     leftLabel: "全くそう思わない",
     rightLabel: "とてもそう思う"
   },
   { 
     id: 7, 
     axis: "EI", 
-    text: "周りの人を楽しませるのが好きだ。",
+    text: "周りの人を楽しませるのが得意だ。",
     leftLabel: "全くそう思わない",
     rightLabel: "とてもそう思う"
   },
