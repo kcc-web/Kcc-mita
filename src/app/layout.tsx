@@ -11,7 +11,7 @@ import { pickColors } from "@/lib/format";
 import NavLinks from "@/components/ui/NavLinks";
 import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 
-// ← SSRを常に最新化（または export const revalidate = 0 でも可）
+// SSRを常に最新化
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -64,23 +64,27 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <PageViewTracker />
         
         <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-md shadow-[0_1px_10px_rgba(0,0,0,0.03)]">
-          <div className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 lg:px-8 h-14 flex items-center justify-between gap-1.5 sm:gap-2 md:gap-3">
+          <div className="mx-auto max-w-6xl px-2 sm:px-3 md:px-6 lg:px-8 h-14 flex items-center justify-between gap-1 sm:gap-2 md:gap-3">
             {/* 左：ロゴ */}
-            <Link href="/" aria-label="KCC Mita" className="text-base md:text-lg font-semibold tracking-tight flex-shrink-0">
+            <Link 
+              href="/" 
+              aria-label="KCC Mita" 
+              className="text-base md:text-lg font-semibold tracking-tight flex-shrink-0 min-w-[40px]"
+            >
               KCC
             </Link>
 
             {/* 中央：混雑バッジ（レスポンシブ幅調整） */}
-            <div className="flex-1 min-w-0 flex justify-center">
+            <div className="flex-1 min-w-0 flex justify-center px-1">
               <VenueStatusBadge 
                 initialVenue={stableVenue} 
                 initialSettings={stableSettings} 
-                className="max-w-full sm:max-w-[360px]"
+                className="w-full max-w-full sm:max-w-[360px]"
               />
             </div>
 
             {/* 右：ナビ（PC = NavLinks / SP = ハンバーガー） */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1 sm:gap-2">
               <nav className="hidden md:block">
                 <NavLinks />
               </nav>

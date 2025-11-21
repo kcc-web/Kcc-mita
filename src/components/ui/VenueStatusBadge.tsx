@@ -82,37 +82,42 @@ export default function VenueStatusBadge({
 
   return (
     <div className={`relative ${className}`}>
-      {/* スマホ版：コンパクトな2行表示 */}
+      {/* スマホ版：画面幅に応じて最適化 */}
       <div
-        className="md:hidden inline-flex flex-col gap-1 min-w-0 rounded-xl border px-2 py-1.5 shadow-sm"
+        className="md:hidden flex flex-col gap-0.5 w-full max-w-full rounded-xl border px-2 py-1.5 shadow-sm"
         style={{
           background: `linear-gradient(135deg, ${pal.bgFrom}, ${pal.bgTo})`,
           borderColor: pal.border,
         }}
       >
-        <div className="flex items-center gap-1.5">
+        {/* 1行目：ステータス + ドット + サブメッセージ */}
+        <div className="flex items-center gap-1.5 min-w-0">
           <span
             className="inline-block h-2 w-2 rounded-full flex-shrink-0"
             style={{ backgroundColor: pal.dot }}
           />
           <span
-            className="text-[10px] font-bold leading-tight"
+            className="text-[10px] font-bold leading-tight truncate"
             style={{ color: pal.text }}
           >
             {statusLabel}
           </span>
           <span
-            className="text-[9px] opacity-70 truncate"
+            className="text-[9px] opacity-70 truncate flex-1 min-w-0"
             style={{ color: pal.text }}
           >
             {copy.sub}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-[9px]" style={{ color: pal.text }}>
+        {/* 2行目：場所 + 営業時間（極小画面では折り返し） */}
+        <div 
+          className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px]" 
+          style={{ color: pal.text }}
+        >
           <div className="flex items-center gap-0.5 opacity-80">
             <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
-            <span className="truncate">{venue.short_location}</span>
+            <span className="truncate max-w-[120px]">{venue.short_location}</span>
           </div>
           <div className="flex items-center gap-0.5 opacity-80">
             <Clock className="h-2.5 w-2.5 flex-shrink-0" />
