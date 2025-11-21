@@ -102,7 +102,7 @@ export const BEAN_TYPES: BeanProfile[] = [
     roast: "浅煎り",
     price: "¥700",
   },
-
+/// 4. Dreamer 
   {
     key: "dreamer",
     beanName: "Ethiopia Natural",
@@ -117,7 +117,7 @@ export const BEAN_TYPES: BeanProfile[] = [
 自由で創造的な発想を刺激し、リラックスした時間を彩ります。
 個性的なコーヒーを楽しみたい、冒険心のあるあなたにぴったりです。`,
     profile: {
-      brightness: 70,  // 58 → 70（より明るく）
+      brightness: 50,  // 58 → 70（より明るく）
       texture: 40,     // 45 → 40（少しSoft寄り維持）
       sweetness: 80,   // 72 → 80（さらに甘く）
       aroma: 80,       // 72 → 80（さらにフルーティに）
@@ -181,12 +181,12 @@ export const BEAN_TYPES: BeanProfile[] = [
 // ===== 距離計算の調整（豆ごとの PRIOR＋Pioneer特別ロジック） =====
 
 const PRIOR: Record<BeanTypeKey, number> = {
-  classic: 0.95,      // 1.0 → 0.95（少し出やすく）
+  classic: 0.85,      // 1.0 → 0.95（少し出やすく）
   balancer: 0.95,     // 1.0 → 0.95（少し出やすく）
-  seeker: 0.95,       // 1.0 → 0.95（少し出やすく）
-  dreamer: 1.15,      // 0.9 → 1.15（出にくく）
+  seeker: 1.05,       // 1.0 → 0.95（少し出やすく）
+  dreamer: 1.3,      // 0.9 → 1.15（出にくく）
   adventurer: 1.05,   // 1.15 → 1.05（少し出やすく）
-  pioneer: 1.2,       // 変更なし
+  pioneer: 1.25,       // 変更なし
 };
 
 const distance = (a: Scores, b: Scores, key: BeanTypeKey) => {
