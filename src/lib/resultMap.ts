@@ -187,7 +187,7 @@ export const BEAN_TYPES: BeanProfile[] = [
 const PRIOR: Record<BeanTypeKey, number> = {
   classic: 0.80,      // わずかに優遇
   balancer: 0.95,     // 基準値
-  seeker: 0.95,       // わずかに優遇
+  seeker: 0.90,       // わずかに優遇
   dreamer: 1.00,      // わずかにペナルティ
   adventurer: 1.5,   // わずかにペナルティ
   pioneer: 1.1,      // レア感維持
