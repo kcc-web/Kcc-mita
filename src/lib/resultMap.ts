@@ -1,4 +1,4 @@
-// src/lib/resultMap.ts - 改善版：均等な分布を実現（2025年11月版）
+// src/lib/resultMap.ts - プロファイル位置調整版（PRIOR最小限）
 
 export type Axes = "brightness" | "texture" | "sweetness" | "aroma";
 export type Scores = Record<Axes, number>;
@@ -26,9 +26,12 @@ export type BeanProfile = {
   price?: string;
 };
 
-// ========== 均等に分布するよう調整された6タイプ ==========
+// ========== プロファイル位置で分布をコントロール ==========
+// コンセプト：ユーザーの回答は中央（50）に集まるので、
+// 出したいタイプは中央寄り、出したくないタイプは極端な位置に配置
+
 export const BEAN_TYPES: BeanProfile[] = [
-  // 1. Classic（深煎り・まろやか・適度な甘さ・穏やか）
+  // 1. Classic - 中央やや下（出やすい）
   {
     key: "classic",
     beanName: "KCC Blend",
@@ -43,17 +46,17 @@ export const BEAN_TYPES: BeanProfile[] = [
 ミルクとの相性も抜群で、カフェラテにしても存在感を失いません。
 伝統的なコーヒーの味わいを大切にする、信頼できる一杯です。`,
     profile: {
-      brightness: 30,  // 25 → 30（少し明るめに調整）
-      texture: 35,     // 変更なし
-      sweetness: 45,   // 変更なし
-      aroma: 35,       // 変更なし
+      brightness: 42,  // 中央やや下
+      texture: 45,     // ほぼ中央
+      sweetness: 48,   // ほぼ中央
+      aroma: 43,       // 中央やや下
     },
     fallbackImage: "/beans/kcc-blend.jpg",
     roast: "深煎り",
     price: "¥700",
   },
 
-  // 2. Balancer（中央バランス型）
+  // 2. Balancer - 完全中央（適度に出る）
   {
     key: "balancer",
     beanName: "Honduras Washed",
@@ -68,17 +71,17 @@ export const BEAN_TYPES: BeanProfile[] = [
 どんなシーンにも溶け込み、リラックスした時間を演出します。
 毎日飲んでも飽きない、安定感のある味わいです。`,
     profile: {
-      brightness: 50,  // 55 → 50（中央値に）
-      texture: 40,     // 35 → 40（中央寄りに）
-      sweetness: 60,   // 65 → 60（中央寄りに）
-      aroma: 50,       // 45 → 50（完全中央に）
+      brightness: 50,  // 完全中央
+      texture: 50,     // 完全中央
+      sweetness: 50,   // 完全中央
+      aroma: 50,       // 完全中央
     },
     fallbackImage: "/beans/honduras.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
 
-  // 3. Seeker（クリアで明るい探求者）
+  // 3. Seeker - 中央やや上（出やすい）
   {
     key: "seeker",
     beanName: "Ethiopia Washed",
@@ -93,17 +96,17 @@ export const BEAN_TYPES: BeanProfile[] = [
 一口ごとに味の輪郭がはっきりと感じられ、コーヒーの奥深さを探求できます。
 スペシャルティコーヒーの魅力を存分に味わいたい方におすすめです。`,
     profile: {
-      brightness: 70,  // 75 → 70（少し中央寄りに）
-      texture: 60,     // 65 → 60（少し中央寄りに）
-      sweetness: 35,   // 変更なし
-      aroma: 35,       // 変更なし
+      brightness: 58,  // 中央やや上
+      texture: 52,     // ほぼ中央
+      sweetness: 45,   // 中央やや下
+      aroma: 47,       // 中央やや下
     },
     fallbackImage: "/beans/ethiopia-washed.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
 
-  // 4. Dreamer（華やかで甘いフルーティ）
+  // 4. Dreamer - 極端な位置（出にくい）
   {
     key: "dreamer",
     beanName: "Ethiopia Natural",
@@ -118,17 +121,17 @@ export const BEAN_TYPES: BeanProfile[] = [
 自由で創造的な発想を刺激し、リラックスした時間を彩ります。
 個性的なコーヒーを楽しみたい、冒険心のあるあなたにぴったりです。`,
     profile: {
-      brightness: 55,  // 50 → 55（少し明るく）
-      texture: 35,     // 40 → 35（Soft寄りに）
-      sweetness: 65,   // 80 → 65（現実的な範囲に）
-      aroma: 70,       // 80 → 70（現実的な範囲に）
+      brightness: 68,  // 極端に高い
+      texture: 25,     // 極端に低い
+      sweetness: 72,   // 極端に高い
+      aroma: 78,       // 極端に高い
     },
     fallbackImage: "/beans/ethiopia.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
 
-  // 5. Adventurer（トロピカルで濃厚）
+  // 5. Adventurer - 極端な位置（出にくい）
   {
     key: "adventurer",
     beanName: "Brazil Anaerobic Natural",
@@ -143,17 +146,17 @@ export const BEAN_TYPES: BeanProfile[] = [
 クリーミーなボディと長く続く甘い余韻が特徴で、
 デザートコーヒーとしても楽しめる、特別な体験を提供します。`,
     profile: {
-      brightness: 45,  // 40 → 45（少し明るく）
-      texture: 50,     // 55 → 50（中央に）
-      sweetness: 70,   // 85 → 70（現実的な範囲に）
-      aroma: 65,       // 70 → 65（調整）
+      brightness: 32,  // 極端に低い
+      texture: 62,     // やや高い
+      sweetness: 78,   // 極端に高い
+      aroma: 73,       // 極端に高い
     },
     fallbackImage: "/beans/brazil.jpg",
     roast: "浅煎り",
     price: "¥700",
   },
 
-  // 6. Pioneer（実験的で唯一無二）
+  // 6. Pioneer - さらに極端（レア）
   {
     key: "pioneer",
     beanName: "Colombia Milan Culturing NG",
@@ -168,10 +171,10 @@ export const BEAN_TYPES: BeanProfile[] = [
 伝統的なコーヒーの枠を超えた、挑戦的で刺激的な一杯です。
 新しい可能性を追求する、真の冒険者のためのコーヒーです。`,
     profile: {
-      brightness: 30,  // 35 → 30（少し深めに）
-      texture: 70,     // 75 → 70（少し中央寄りに）
-      sweetness: 30,   // 25 → 30（少し上げる）
-      aroma: 75,       // 85 → 75（少し現実的に）
+      brightness: 28,  // 極端に低い
+      texture: 75,     // 極端に高い
+      sweetness: 27,   // 極端に低い
+      aroma: 82,       // 極端に高い
     },
     fallbackImage: "/beans/colombia-milan.jpg",
     roast: "浅煎り",
@@ -179,15 +182,15 @@ export const BEAN_TYPES: BeanProfile[] = [
   },
 ];
 
-// ===== 距離計算の調整（豆ごとの PRIOR＋Pioneer特別ロジック） =====
+// ===== PRIORは最小限の微調整のみ =====
 
 const PRIOR: Record<BeanTypeKey, number> = {
-  classic: 0.90,      // 0.85 → 0.90（少し出やすく）
-  balancer: 1.00,     // 0.95 → 1.00（基準値）
-  seeker: 1.05,       // 変更なし
-  dreamer: 0.85,      // 1.3 → 0.85（大幅に出やすく！）
-  adventurer: 0.95,   // 1.05 → 0.95（少し出やすく）
-  pioneer: 1.20,      // 1.25 → 1.20（少し出やすく、レア感維持）
+  classic: 0.95,      // わずかに優遇
+  balancer: 1.00,     // 基準値
+  seeker: 0.95,       // わずかに優遇
+  dreamer: 1.10,      // わずかにペナルティ
+  adventurer: 1.10,   // わずかにペナルティ
+  pioneer: 1.15,      // レア感維持
 };
 
 const distance = (a: Scores, b: Scores, key: BeanTypeKey) => {
@@ -206,15 +209,11 @@ const distance = (a: Scores, b: Scores, key: BeanTypeKey) => {
       (a.aroma > 70 || a.aroma < 30);
 
     if (isExtreme) {
-      // 全軸が極端に振れている人 → 他より少し選ばれやすく
       return raw * 0.85;
     }
-
-    // それ以外は PRIOR どおり
     return raw * PRIOR.pioneer;
   }
 
-  // それ以外（Classic / Balancer / Seeker / Dreamer / Adventurer）は PRIOR に従う
   return raw * PRIOR[key];
 };
 
