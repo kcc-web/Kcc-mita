@@ -96,10 +96,10 @@ export const BEAN_TYPES: BeanProfile[] = [
 一口ごとに味の輪郭がはっきりと感じられ、コーヒーの奥深さを探求できます。
 スペシャルティコーヒーの魅力を存分に味わいたい方におすすめです。`,
     profile: {
-      brightness: 58,  // 中央やや上
-      texture: 52,     // ほぼ中央
-      sweetness: 45,   // 中央やや下
-      aroma: 47,       // 中央やや下
+      brightness: 32,  // 中央やや上
+      texture: 62,     // ほぼ中央
+      sweetness: 78,   // 中央やや下
+      aroma: 73,       // 中央やや下
     },
     fallbackImage: "/beans/ethiopia-washed.jpg",
     roast: "浅煎り",
@@ -146,10 +146,10 @@ export const BEAN_TYPES: BeanProfile[] = [
 クリーミーなボディと長く続く甘い余韻が特徴で、
 デザートコーヒーとしても楽しめる、特別な体験を提供します。`,
     profile: {
-      brightness: 32,  // 極端に低い
-      texture: 62,     // やや高い
-      sweetness: 78,   // 極端に高い
-      aroma: 73,       // 極端に高い
+      brightness: 56,  // 極端に低い
+      texture: 52,     // やや高い
+      sweetness: 45,   // 極端に高い
+      aroma: 47,       // 極端に高い
     },
     fallbackImage: "/beans/brazil.jpg",
     roast: "浅煎り",
