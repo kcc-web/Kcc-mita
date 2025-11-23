@@ -188,7 +188,7 @@ const PRIOR: Record<BeanTypeKey, number> = {
   classic: 0.85,      // わずかに優遇
   balancer: 1.00,     // 基準値
   seeker: 0.85,       // わずかに優遇
-  dreamer: 1.00,      // わずかにペナルティ
+  dreamer: 1.1,      // わずかにペナルティ
   adventurer: 1.3,   // わずかにペナルティ
   pioneer: 1.1,      // レア感維持
 };
